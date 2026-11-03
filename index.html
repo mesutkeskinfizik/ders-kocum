@@ -43,7 +43,6 @@
                     <span id="headerUserName" class="block text-sm font-semibold text-slate-900"></span>
                     <span id="headerUserRole" class="block text-xs text-slate-500"></span>
                 </div>
-                <!-- Sadece koç ise şifre değiştirme butonu görünür -->
                 <button id="kocPasswordBtn" onclick="openPasswordModal()" class="hidden px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition items-center gap-1.5">
                     <i class="fa-solid fa-key"></i> Şifre Değiştir
                 </button>
@@ -77,7 +76,7 @@
                 </button>
             </div>
 
-            <!-- Koç Giriş Formu (Değeri boş bırakıldı) -->
+            <!-- Koç Giriş Formu -->
             <form id="kocLoginForm" onsubmit="handleKocLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">E-Posta Adresi</label>
@@ -92,7 +91,7 @@
                 </button>
             </form>
 
-            <!-- Öğrenci Giriş Formu (Değeri boş bırakıldı) -->
+            <!-- Öğrenci Giriş Formu -->
             <form id="ogrenciLoginForm" onsubmit="handleOgrenciLogin(event)" class="space-y-4 hidden">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Adınız ve Soyadınız</label>
@@ -184,6 +183,16 @@
                         <i class="fa-solid fa-chart-column text-emerald-600"></i> Günlük Soru Çözüm Grafiği
                     </h3>
                     <canvas id="chartWeeklyQuestions" height="100"></canvas>
+                </div>
+            </div>
+
+            <!-- DERS BAŞARI ORANI ANALİZİ (KIRMIZI RENKLİ) -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b pb-3">
+                    <i class="fa-solid fa-chart-pie text-rose-600"></i> Ders Başarı Oranı Analizi (% Ortalama Başarı)
+                </h3>
+                <div id="lessonSuccessAnalysisContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <p class="text-xs text-slate-400">Henüz yeterli deneme verisi bulunmuyor.</p>
                 </div>
             </div>
 
@@ -392,7 +401,6 @@
         let detailChartAytInstance = null;
         let detailChartWeeklyInstance = null;
 
-        // Koç ilk şifresi MesutHoca olarak ayarlandı
         let kocAccount = JSON.parse(localStorage.getItem('kocAccount')) || {
             email: "mesutkeskinfizik@gmail.com",
             password: "MesutHoca"
@@ -413,6 +421,16 @@
 
         let studentList = defaultStudents;
 
+        // Tarih formatlama (Yıl-Ay-Gün -> Gün.Ay.Yıl)
+        function formatDateTR(dateStr) {
+            if (!dateStr) return "";
+            const parts = dateStr.split("-");
+            if (parts.length === 3) {
+                return `${parts[2]}.${parts[1]}.${parts[0]}`;
+            }
+            return dateStr;
+        }
+
         async function manualRefreshData() {
             await fetchStudentsFromSheet();
             if (currentRole === 'koc') {
@@ -426,7 +444,6 @@
                 const response = await fetch(GOOGLE_SHEET_URL + "?t=" + Date.now());
                 const data = await response.json();
                 if (data) {
-                    // Eğer buluttan gelen yapı yeni nesne formatındaysa (öğrenciler ve koç şifresi birlikte)
                     if (data.students && Array.isArray(data.students)) {
                         studentList = data.students;
                         localStorage.setItem('studentList', JSON.stringify(studentList));
@@ -485,7 +502,6 @@
             const kocBtn = document.getElementById('tabKocBtn');
             const ogrenciBtn = document.getElementById('tabOgrenciBtn');
 
-            // Giriş yaparken inputları temizle (hafızada kalmasın)
             document.getElementById('kocPasswordInput').value = "";
             document.getElementById('ogrenciNameInput').value = "";
             document.getElementById('ogrenciPasswordInput').value = "";
@@ -563,14 +579,14 @@
             if (currentRole === 'koc') {
                 document.getElementById('headerUserName').innerText = "Koç Paneli";
                 document.getElementById('headerUserRole').innerText = currentUser.email;
-                document.getElementById('kocPasswordBtn').classList.remove('hidden'); // Sadece koçta şifre değiştirme butonu görünür
+                document.getElementById('kocPasswordBtn').classList.remove('hidden');
                 document.getElementById('kocPanel').classList.remove('hidden');
                 document.getElementById('ogrenciPanel').classList.add('hidden');
                 renderKocPanel();
             } else if (currentRole === 'ogrenci') {
                 document.getElementById('headerUserName').innerText = currentUser.fullName;
                 document.getElementById('headerUserRole').innerText = currentUser.class;
-                document.getElementById('kocPasswordBtn').classList.add('hidden'); // Öğrencide şifre değiştirme butonu GÖRÜNMEZ
+                document.getElementById('kocPasswordBtn').classList.add('hidden');
                 document.getElementById('kocPanel').classList.add('hidden');
                 document.getElementById('ogrenciPanel').classList.remove('hidden');
                 renderOgrenciPanel();
@@ -632,7 +648,6 @@
             }
         }
 
-        // ÖĞRENCİ ŞİFRELERİNİ YÖNETME EKRANI (KOÇ ÖZEL)
         function openStudentPasswordsModal() {
             const container = document.getElementById('studentPasswordListContainer');
             container.innerHTML = "";
@@ -695,7 +710,7 @@
                     
                     const div = document.createElement('div');
                     div.className = "bg-slate-50 p-2.5 rounded-xl border text-xs flex justify-between";
-                    div.innerHTML = `<span class="font-semibold text-slate-700">${dq.date}</span> <span class="text-indigo-600 font-medium">${detailStr || '0 Soru'}</span>`;
+                    div.innerHTML = `<span class="font-semibold text-slate-700">${formatDateTR(dq.date)}</span> <span class="text-indigo-600 font-medium">${detailStr || '0 Soru'}</span>`;
                     dailyContainer.appendChild(div);
                 });
             }
@@ -726,7 +741,7 @@
                             <div>
                                 <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded mr-2">${ex.type}</span>
                                 <span class="font-bold text-slate-800 text-xs">${ex.name}</span>
-                                <span class="text-[11px] text-slate-400 ml-2">(${ex.date})</span>
+                                <span class="text-[11px] text-slate-400 ml-2">(${formatDateTR(ex.date)})</span>
                             </div>
                             <span class="text-xs font-bold text-emerald-600">Toplam Net: ${ex.totalNet}</span>
                         </div>
@@ -756,7 +771,7 @@
             detailChartTytInstance = new Chart(document.getElementById('detailChartTyt').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: tytExams.length ? tytExams.map(e => `${e.date} - ${e.name}`) : ["Veri Yok"],
+                    labels: tytExams.length ? tytExams.map(e => `${formatDateTR(e.date)} - ${e.name}`) : ["Veri Yok"],
                     datasets: [{ label: 'TYT Net', data: tytExams.length ? tytExams.map(e => parseFloat(e.totalNet)) : [0], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.3 }]
                 },
                 options: { responsive: true, scales: { y: { beginAtZero: true } } }
@@ -767,7 +782,7 @@
             detailChartAytInstance = new Chart(document.getElementById('detailChartAyt').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: aytExams.length ? aytExams.map(e => `${e.date} - ${e.name}`) : ["Veri Yok"],
+                    labels: aytExams.length ? aytExams.map(e => `${formatDateTR(e.date)} - ${e.name}`) : ["Veri Yok"],
                     datasets: [{ label: 'AYT Net', data: aytExams.length ? aytExams.map(e => parseFloat(e.totalNet)) : [0], borderColor: '#9333ea', backgroundColor: 'rgba(147, 51, 234, 0.1)', fill: true, tension: 0.3 }]
                 },
                 options: { responsive: true, scales: { y: { beginAtZero: true } } }
@@ -777,7 +792,7 @@
             detailChartWeeklyInstance = new Chart(document.getElementById('detailChartWeekly').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: daily.length ? daily.map(d => d.date) : ["Veri Yok"],
+                    labels: daily.length ? daily.map(d => formatDateTR(d.date)) : ["Veri Yok"],
                     datasets: [{
                         label: 'Günlük Çözülen Soru',
                         data: daily.length ? daily.map(d => Object.values(d.questions || {}).reduce((a, b) => a + Number(b), 0)) : [0],
@@ -802,7 +817,95 @@
             document.getElementById('statExamCount').innerText = currentUser.exams ? currentUser.exams.length : 0;
 
             renderCharts();
+            renderLessonSuccessAnalysis();
             renderExamTable();
+        }
+
+        // Ders Başarı Oranı Hesaplama ve Kırmızı Renkte Gösterme
+        function renderLessonSuccessAnalysis() {
+            const container = document.getElementById('lessonSuccessAnalysisContainer');
+            container.innerHTML = "";
+
+            const exams = currentUser.exams || [];
+            if (exams.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz deneme kaydı olmadığı için başarı analizi yapılamıyor.</p>`;
+                return;
+            }
+
+            // Standart ders soru kapasiteleri (TYT ve AYT toplamları)
+            const maxQuestions = {
+                turkce: 40,
+                matematik: 40,
+                sosyal: 20,
+                fizik: 14, // TYT:7, AYT:14 (Genel max kabul)
+                kimya: 13, // TYT:7, AYT:13
+                biyoloji: 13, // TYT:6, AYT:13
+                edebiyat: 24,
+                tarih1: 10,
+                cografya1: 6,
+                tarih2: 11,
+                cografya2: 11,
+                felsefe: 12,
+                din: 6
+            };
+
+            let lessonStats = {};
+
+            exams.forEach(ex => {
+                if (ex.lessons) {
+                    Object.entries(ex.lessons).forEach(([lesKey, lesData]) => {
+                        if (!lessonStats[lesKey]) {
+                            lessonStats[lesKey] = { totalNet: 0, count: 0 };
+                        }
+                        lessonStats[lesKey].totalNet += parseFloat(lesData.net) || 0;
+                        lessonStats[lesKey].count += 1;
+                    });
+                }
+            });
+
+            const lessonNamesMap = {
+                turkce: "Türkçe",
+                matematik: "Matematik",
+                sosyal: "Sosyal Bilimler",
+                fizik: "Fizik",
+                kimya: "Kimya",
+                biyoloji: "Biyoloji",
+                edebiyat: "Türk Dili ve Edebiyatı",
+                tarih1: "Tarih-1",
+                cografya1: "Coğrafya-1",
+                tarih2: "Tarih-2",
+                cografya2: "Coğrafya-2",
+                felsefe: "Felsefe Grubu",
+                din: "Din Kültürü"
+            };
+
+            let hasData = false;
+            Object.entries(lessonStats).forEach(([lesKey, stat]) => {
+                hasData = true;
+                const avgNet = stat.totalNet / stat.count;
+                const maxQ = maxQuestions[lesKey] || 40;
+                let successRate = (avgNet / maxQ) * 100;
+                if (successRate > 100) successRate = 100;
+                if (successRate < 0) successRate = 0;
+
+                const card = document.createElement('div');
+                card.className = "bg-rose-50 border border-rose-100 p-4 rounded-2xl flex flex-col justify-between";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-slate-800 text-xs uppercase">${lessonNamesMap[lesKey] || lesKey}</span>
+                        <span class="text-[10px] text-rose-500 font-semibold">Ort. Net: ${avgNet.toFixed(1)}</span>
+                    </div>
+                    <div class="flex items-baseline gap-1 mt-2">
+                        <span class="text-2xl font-extrabold text-rose-600">%${successRate.toFixed(1)}</span>
+                        <span class="text-[11px] text-rose-700 font-medium">Başarı Oranı</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (!hasData) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz ders bazında net verisi girilmemiş.</p>`;
+            }
         }
 
         function renderCharts() {
@@ -814,7 +917,7 @@
             chartTytInstance = new Chart(document.getElementById('chartTytNet').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: tytExams.length ? tytExams.map(e => `${e.date} - ${e.name}`) : ["Henüz Veri Yok"],
+                    labels: tytExams.length ? tytExams.map(e => `${formatDateTR(e.date)} - ${e.name}`) : ["Henüz Veri Yok"],
                     datasets: [{ label: 'TYT Net', data: tytExams.length ? tytExams.map(e => parseFloat(e.totalNet)) : [0], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.3 }]
                 },
                 options: { responsive: true, scales: { y: { beginAtZero: true } } }
@@ -825,13 +928,13 @@
             chartAytInstance = new Chart(document.getElementById('chartAytNet').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: aytExams.length ? aytExams.map(e => `${e.date} - ${e.name}`) : ["Henüz Veri Yok"],
+                    labels: aytExams.length ? aytExams.map(e => `${formatDateTR(e.date)} - ${e.name}`) : ["Henüz Veri Yok"],
                     datasets: [{ label: 'AYT Net', data: aytExams.length ? aytExams.map(e => parseFloat(e.totalNet)) : [0], borderColor: '#9333ea', backgroundColor: 'rgba(147, 51, 234, 0.1)', fill: true, tension: 0.3 }]
                 },
                 options: { responsive: true, scales: { y: { beginAtZero: true } } }
             });
 
-            const dailyLabels = daily.map(d => d.date);
+            const dailyLabels = daily.map(d => formatDateTR(d.date));
             const dailyTotals = daily.map(d => Object.values(d.questions || {}).reduce((a, b) => a + Number(b), 0));
 
             if (chartWeeklyInstance) chartWeeklyInstance.destroy();
@@ -884,7 +987,7 @@
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-slate-100 hover:bg-slate-50 transition";
                 tr.innerHTML = `
-                    <td class="py-3 px-3 font-medium text-slate-900">${ex.date}</td>
+                    <td class="py-3 px-3 font-medium text-slate-900">${formatDateTR(ex.date)}</td>
                     <td class="py-3 px-3 font-semibold text-slate-800">${ex.name}</td>
                     <td class="py-3 px-3 text-right font-bold text-emerald-600">${ex.totalNet} <span class="block text-[10px] text-slate-400 font-normal">${summaryText}</span></td>
                 `;
@@ -1065,7 +1168,7 @@
                 lastName,
                 fullName: `${firstName} ${lastName}`,
                 class: studentClass,
-                password: "12345", // Yeni eklenen öğrencinin de ilk şifresi 12345
+                password: "12345",
                 targetQuestions: target,
                 dailyQuestions: [],
                 exams: []
