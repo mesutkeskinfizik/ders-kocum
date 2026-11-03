@@ -14,7 +14,6 @@
         .gradient-bg {
             background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         }
-        /* Netlify rozetini ve logosunu gizleyen kod */
         #netlify-badge, a[href*="netlify.com"], img[alt*="Deploys by Netlify"] {
             display: none !important;
             opacity: 0 !important;
@@ -37,7 +36,6 @@
                 </div>
             </div>
 
-            <!-- Kullanıcı Bilgisi ve Aksiyonlar -->
             <div id="userHeaderActions" class="hidden flex items-center gap-4">
                 <div class="text-right">
                     <span id="headerUserName" class="block text-sm font-semibold text-slate-900"></span>
@@ -66,7 +64,6 @@
                 <p class="text-sm text-slate-500 mt-1">Lütfen giriş yapacağınız rolü seçiniz</p>
             </div>
 
-            <!-- Rol Seçim Sekmeleri -->
             <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-xl mb-6">
                 <button id="tabKocBtn" onclick="switchLoginTab('koc')" class="py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-indigo-600 transition">
                     <i class="fa-solid fa-user-tie mr-1"></i> Koç Girişi
@@ -76,7 +73,6 @@
                 </button>
             </div>
 
-            <!-- Koç Giriş Formu -->
             <form id="kocLoginForm" onsubmit="handleKocLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">E-Posta Adresi</label>
@@ -91,7 +87,6 @@
                 </button>
             </form>
 
-            <!-- Öğrenci Giriş Formu -->
             <form id="ogrenciLoginForm" onsubmit="handleOgrenciLogin(event)" class="space-y-4 hidden">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Adınız ve Soyadınız</label>
@@ -186,7 +181,7 @@
                 </div>
             </div>
 
-            <!-- DERS BAŞARI ORANI ANALİZİ (KIRMIZI RENKLİ) -->
+            <!-- DERS BAŞARI ORANI ANALİZİ (ÖĞRENCİ) -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b pb-3">
                     <i class="fa-solid fa-chart-pie text-rose-600"></i> Ders Başarı Oranı Analizi (% Ortalama Başarı)
@@ -295,7 +290,7 @@
         </div>
     </div>
 
-    <!-- KOÇ ÖĞRENCİ DETAY MODALI -->
+    <!-- KOÇ ÖĞRENCİ DETAY MODALI (DERS BAŞARI ORANI EKLENDİ) -->
     <div id="studentDetailModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
         <div class="bg-white max-w-4xl w-full rounded-2xl p-6 shadow-2xl border my-8">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
@@ -322,6 +317,16 @@
                     </div>
                 </div>
 
+                <!-- Koç Panelinde Öğrencinin Ders Başarı Oranı Analizi -->
+                <div class="bg-slate-50 p-4 rounded-xl border space-y-3">
+                    <h4 class="text-xs font-bold uppercase text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-rose-600"></i> Ders Başarı Oranı Analizi (% Ortalama Başarı)
+                    </h4>
+                    <div id="detailLessonSuccessContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <p class="text-xs text-slate-400">Henüz deneme verisi yok.</p>
+                    </div>
+                </div>
+
                 <div>
                     <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Günlük Soru Takip Kayıtları</h4>
                     <div id="detailDailyQuestions" class="space-y-2"></div>
@@ -334,7 +339,7 @@
         </div>
     </div>
 
-    <!-- ÖĞRENCİ ŞİFRELERİNİ YÖNETME EKRANI (KOÇ ÖZEL) -->
+    <!-- ÖĞRENCİ ŞİFRELERİNİ YÖNETME EKRANI -->
     <div id="studentPasswordsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
         <div class="bg-white max-w-2xl w-full rounded-2xl p-6 shadow-2xl border my-8">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
@@ -421,7 +426,38 @@
 
         let studentList = defaultStudents;
 
-        // Tarih formatlama (Yıl-Ay-Gün -> Gün.Ay.Yıl)
+        const maxQuestionsMap = {
+            turkce: 40,
+            matematik: 40,
+            sosyal: 20,
+            fizik: 14,
+            kimya: 13,
+            biyoloji: 13,
+            edebiyat: 24,
+            tarih1: 10,
+            cografya1: 6,
+            tarih2: 11,
+            cografya2: 11,
+            felsefe: 12,
+            din: 6
+        };
+
+        const lessonNamesMap = {
+            turkce: "Türkçe",
+            matematik: "Matematik",
+            sosyal: "Sosyal Bilimler",
+            fizik: "Fizik",
+            kimya: "Kimya",
+            biyoloji: "Biyoloji",
+            edebiyat: "Türk Dili ve Edebiyatı",
+            tarih1: "Tarih-1",
+            cografya1: "Coğrafya-1",
+            tarih2: "Tarih-2",
+            cografya2: "Coğrafya-2",
+            felsefe: "Felsefe Grubu",
+            din: "Din Kültürü"
+        };
+
         function formatDateTR(dateStr) {
             if (!dateStr) return "";
             const parts = dateStr.split("-");
@@ -751,6 +787,9 @@
                 });
             }
 
+            // Koç Detay Modalında Başarı Analizini Render Et
+            renderLessonSuccessCards(student.exams || [], 'detailLessonSuccessContainer');
+
             document.getElementById('studentDetailModal').classList.remove('hidden');
 
             setTimeout(() => {
@@ -760,6 +799,57 @@
 
         function closeStudentDetailModal() {
             document.getElementById('studentDetailModal').classList.add('hidden');
+        }
+
+        function renderLessonSuccessCards(exams, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+
+            if (!exams || exams.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz deneme kaydı olmadığı için başarı analizi yapılamıyor.</p>`;
+                return;
+            }
+
+            let lessonStats = {};
+            exams.forEach(ex => {
+                if (ex.lessons) {
+                    Object.entries(ex.lessons).forEach(([lesKey, lesData]) => {
+                        if (!lessonStats[lesKey]) {
+                            lessonStats[lesKey] = { totalNet: 0, count: 0 };
+                        }
+                        lessonStats[lesKey].totalNet += parseFloat(lesData.net) || 0;
+                        lessonStats[lesKey].count += 1;
+                    });
+                }
+            });
+
+            let hasData = false;
+            Object.entries(lessonStats).forEach(([lesKey, stat]) => {
+                hasData = true;
+                const avgNet = stat.totalNet / stat.count;
+                const maxQ = maxQuestionsMap[lesKey] || 40;
+                let successRate = (avgNet / maxQ) * 100;
+                if (successRate > 100) successRate = 100;
+                if (successRate < 0) successRate = 0;
+
+                const card = document.createElement('div');
+                card.className = "bg-rose-50 border border-rose-100 p-3 rounded-xl flex flex-col justify-between";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-slate-800 text-xs uppercase">${lessonNamesMap[lesKey] || lesKey}</span>
+                        <span class="text-[10px] text-rose-500 font-semibold">Ort. Net: ${avgNet.toFixed(1)}</span>
+                    </div>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span class="text-xl font-extrabold text-rose-600">%${successRate.toFixed(1)}</span>
+                        <span class="text-[11px] text-rose-700 font-medium">Başarı Oranı</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (!hasData) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz ders bazında net verisi girilmemiş.</p>`;
+            }
         }
 
         function renderDetailCharts(student) {
@@ -817,95 +907,8 @@
             document.getElementById('statExamCount').innerText = currentUser.exams ? currentUser.exams.length : 0;
 
             renderCharts();
-            renderLessonSuccessAnalysis();
+            renderLessonSuccessCards(currentUser.exams || [], 'lessonSuccessAnalysisContainer');
             renderExamTable();
-        }
-
-        // Ders Başarı Oranı Hesaplama ve Kırmızı Renkte Gösterme
-        function renderLessonSuccessAnalysis() {
-            const container = document.getElementById('lessonSuccessAnalysisContainer');
-            container.innerHTML = "";
-
-            const exams = currentUser.exams || [];
-            if (exams.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz deneme kaydı olmadığı için başarı analizi yapılamıyor.</p>`;
-                return;
-            }
-
-            // Standart ders soru kapasiteleri (TYT ve AYT toplamları)
-            const maxQuestions = {
-                turkce: 40,
-                matematik: 40,
-                sosyal: 20,
-                fizik: 14, // TYT:7, AYT:14 (Genel max kabul)
-                kimya: 13, // TYT:7, AYT:13
-                biyoloji: 13, // TYT:6, AYT:13
-                edebiyat: 24,
-                tarih1: 10,
-                cografya1: 6,
-                tarih2: 11,
-                cografya2: 11,
-                felsefe: 12,
-                din: 6
-            };
-
-            let lessonStats = {};
-
-            exams.forEach(ex => {
-                if (ex.lessons) {
-                    Object.entries(ex.lessons).forEach(([lesKey, lesData]) => {
-                        if (!lessonStats[lesKey]) {
-                            lessonStats[lesKey] = { totalNet: 0, count: 0 };
-                        }
-                        lessonStats[lesKey].totalNet += parseFloat(lesData.net) || 0;
-                        lessonStats[lesKey].count += 1;
-                    });
-                }
-            });
-
-            const lessonNamesMap = {
-                turkce: "Türkçe",
-                matematik: "Matematik",
-                sosyal: "Sosyal Bilimler",
-                fizik: "Fizik",
-                kimya: "Kimya",
-                biyoloji: "Biyoloji",
-                edebiyat: "Türk Dili ve Edebiyatı",
-                tarih1: "Tarih-1",
-                cografya1: "Coğrafya-1",
-                tarih2: "Tarih-2",
-                cografya2: "Coğrafya-2",
-                felsefe: "Felsefe Grubu",
-                din: "Din Kültürü"
-            };
-
-            let hasData = false;
-            Object.entries(lessonStats).forEach(([lesKey, stat]) => {
-                hasData = true;
-                const avgNet = stat.totalNet / stat.count;
-                const maxQ = maxQuestions[lesKey] || 40;
-                let successRate = (avgNet / maxQ) * 100;
-                if (successRate > 100) successRate = 100;
-                if (successRate < 0) successRate = 0;
-
-                const card = document.createElement('div');
-                card.className = "bg-rose-50 border border-rose-100 p-4 rounded-2xl flex flex-col justify-between";
-                card.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="font-bold text-slate-800 text-xs uppercase">${lessonNamesMap[lesKey] || lesKey}</span>
-                        <span class="text-[10px] text-rose-500 font-semibold">Ort. Net: ${avgNet.toFixed(1)}</span>
-                    </div>
-                    <div class="flex items-baseline gap-1 mt-2">
-                        <span class="text-2xl font-extrabold text-rose-600">%${successRate.toFixed(1)}</span>
-                        <span class="text-[11px] text-rose-700 font-medium">Başarı Oranı</span>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-
-            if (!hasData) {
-                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz ders bazında net verisi girilmemiş.</p>`;
-            }
         }
 
         function renderCharts() {
@@ -1174,7 +1177,7 @@
                 exams: []
             };
 
-            studentList.push(newStudent);
+        studentList.push(newStudent);
             localStorage.setItem('studentList', JSON.stringify(studentList));
             syncDataToSheet();
             closeAddStudentModal();
