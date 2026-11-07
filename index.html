@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DersKoçum - Öğrenci Takip Portalı v1.8.4</title>
+    <title>DersKoçum - Öğrenci Takip Portalı v1.8.5</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -32,7 +32,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-slate-900 text-lg leading-tight">DersKoçum</h1>
-                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.4</span>
+                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.5</span>
                 </div>
             </div>
 
@@ -435,6 +435,14 @@
 
         let studentList = defaultStudents;
 
+        // VERSİYON KONTROLÜ VE OTOMATİK ÖNBELLEK GÜNCELLEME (Hasan Can -> Halil Can Zorunlu Düzeltme)
+        const APP_VERSION = "v1.8.5";
+        if (localStorage.getItem('app_version') !== APP_VERSION) {
+            localStorage.clear();
+            localStorage.setItem('app_version', APP_VERSION);
+            localStorage.setItem('studentList', JSON.stringify(defaultStudents));
+        }
+
         const maxQuestionsMap = {
             turkce: 40,
             matematik: 40,
@@ -490,7 +498,13 @@
                 const data = await response.json();
                 if (data) {
                     if (data.students && Array.isArray(data.students)) {
-                        studentList = data.students;
+                        // Eğer sheets'ten gelen eski listede Hasan Can varsa Halil Can ile değiştir
+                        studentList = data.students.map(s => {
+                            if (s.fullName && s.fullName.toLowerCase().includes("hasan can")) {
+                                return { ...s, firstName: "Halil Can", fullName: "Halil Can Deniz" };
+                            }
+                            return s;
+                        });
                         localStorage.setItem('studentList', JSON.stringify(studentList));
                     } else if (Array.isArray(data) && data.length > 0 && data[0] && data[0].fullName) {
                         studentList = data;
