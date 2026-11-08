@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DersKoçum - Öğrenci Takip Portalı v1.8.10</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>DersKoçum - Öğrenci Takip Portalı v1.8.11</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -37,7 +40,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-slate-900 text-lg leading-tight">DersKoçum</h1>
-                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.10</span>
+                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.11</span>
                 </div>
             </div>
 
@@ -435,7 +438,7 @@
             { id: "1", firstName: "Ahmet Hakan", lastName: "Aslan", fullName: "Ahmet Hakan Aslan", class: "YKS Sayısal", password: "12345", targetQuestions: 1000, dailyQuestions: [], exams: [] },
             { id: "2", firstName: "Sultan Sümeyye", lastName: "Gedik", fullName: "Sultan Sümeyye Gedik", class: "YKS Sayısal", password: "12345", targetQuestions: 1000, dailyQuestions: [], exams: [] },
             { id: "3", firstName: "Ege", lastName: "Çeşmeci", fullName: "Ege Çeşmeci", class: "YKS Sayısal", password: "12345", targetQuestions: 1000, dailyQuestions: [], exams: [] },
-            { id: "4", firstName: "Halil Can", lastName: "Deniz", fullName: "Halil Can Deniz", class: "YKS Sayısal", password: "12345", targetQuestions: 1000, targetQuestions: 1000, dailyQuestions: [], exams: [] },
+            { id: "4", firstName: "Halil Can", lastName: "Deniz", fullName: "Halil Can Deniz", class: "YKS Sayısal", password: "12345", targetQuestions: 1000, dailyQuestions: [], exams: [] },
             { id: "5", firstName: "Egemen", lastName: "Denizci", fullName: "Egemen Denizci", class: "YKS Sayısal", password: "12345", targetQuestions: 1000, dailyQuestions: [], exams: [] },
             { id: "6", firstName: "Bertuğ", lastName: "Yenersu", fullName: "Bertuğ Yenersu", class: "YKS Sayısal", password: "12345", targetQuestions: 1000, dailyQuestions: [], exams: [] },
             { id: "7", firstName: "Aysu", lastName: "Vatansever", fullName: "Aysu Vatansever", class: "YKS Eşit Ağırlık", password: "12345", targetQuestions: 1000, dailyQuestions: [], exams: [] },
@@ -445,11 +448,10 @@
 
         let studentList = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
 
-        // OTOMATİK VERSİYON VE ÖNBELLEK KONTROLÜ (Eski verileri otomatik temizler, güncellemeyi zorlar)
-        const APP_VERSION = "v1.8.10";
+        const APP_VERSION = "v1.8.11";
         if (localStorage.getItem('app_version') !== APP_VERSION) {
             localStorage.setItem('app_version', APP_VERSION);
-            // Sürüm değiştiğinde yerel önbellek çakışmasını önlemek için taze veri çekmeye zorla
+            localStorage.removeItem('studentList'); // Eski bozuk önbelleği tamamen temizle
         }
 
         const tytMaxQ = { turkce: 40, matematik: 40, sosyal: 20, fizik: 7, kimya: 7, biyoloji: 6 };
@@ -480,7 +482,6 @@
             return dateStr;
         }
 
-        // Akıllı Veri Birleştirme: Tüm sınavları ID'ye göre birleştirir, veri kaybını ve eksik görünmeyi tamamen önler
         function mergeStudentData(localStudents, remoteStudents) {
             return remoteStudents.map(remoteS => {
                 const localS = localStudents.find(l => l.id === remoteS.id || (l.fullName && l.fullName.toLowerCase() === remoteS.fullName.toLowerCase()));
@@ -507,21 +508,20 @@
         }
 
         async function manualRefreshData() {
-            await fetchStudentsFromSheet(true);
+            await fetchStudentsFromSheet();
             if (currentRole === 'koc') {
                 renderKocPanel();
             }
-            alert("Canlı veriler Google Sheets üzerinden başarıyla güncellendi ve tüm sınavlar yüklendi!");
+            alert("Canlı veriler Google Sheets üzerinden başarıyla güncellendi!");
         }
 
-        async function fetchStudentsFromSheet(forceAlert = false) {
+        async function fetchStudentsFromSheet() {
             try {
-                // Tarayıcının önbelleğe almasını engellemek için cache: 'reload' ve zaman damgası eklenmiştir
                 const response = await fetch(GOOGLE_SHEET_URL + "?t=" + Date.now(), { cache: "reload" });
                 const data = await response.json();
                 if (data) {
                     if (data.students && Array.isArray(data.students)) {
-                        const localStored = JSON.parse(localStorage.getItem('studentList')) || studentList;
+                        const localStored = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
                         studentList = mergeStudentData(localStored, data.students);
                         localStorage.setItem('studentList', JSON.stringify(studentList));
                     }
@@ -810,7 +810,6 @@
         }
 
         async function openStudentDetailModal(studentId) {
-            // Detay açılmadan önce güncel veriyi sunucudan taze çekelim
             await fetchStudentsFromSheet();
             const student = studentList.find(s => s.id === studentId);
             if (!student) return;
@@ -941,7 +940,7 @@
             });
 
             if (!hasData) {
-                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz ders bazında net verisi verilmemiş.</p>`;
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz ders bazında net verisi girilmemiş.</p>`;
             }
         }
 
