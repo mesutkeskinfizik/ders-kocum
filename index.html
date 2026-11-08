@@ -451,7 +451,7 @@
         const APP_VERSION = "v1.8.12";
         if (localStorage.getItem('app_version') !== APP_VERSION) {
             localStorage.setItem('app_version', APP_VERSION);
-            localStorage.removeItem('studentList'); // Yerel bozuk önbelleği tamamen temizle
+            localStorage.removeItem('studentList');
         }
 
         const tytMaxQ = { turkce: 40, matematik: 40, sosyal: 20, fizik: 7, kimya: 7, biyoloji: 6 };
@@ -482,7 +482,6 @@
             return dateStr;
         }
 
-        // Kesin Veri Birleştirme: Sunucudaki veriyi asla ezmez, eksiksiz birleştirir
         function mergeStudentData(localStudents, remoteStudents) {
             return remoteStudents.map(remoteS => {
                 const localS = localStudents.find(l => l.id === remoteS.id || (l.fullName && l.fullName.toLowerCase().trim() === remoteS.fullName.toLowerCase().trim()));
@@ -522,7 +521,6 @@
                 const data = await response.json();
                 if (data) {
                     if (data.students && Array.isArray(data.students)) {
-                        // Doğrudan Google Sheets'ten gelen veriyi baz alıyoruz
                         const localStored = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
                         studentList = mergeStudentData(localStored, data.students);
                         localStorage.setItem('studentList', JSON.stringify(studentList));
