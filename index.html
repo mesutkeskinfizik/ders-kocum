@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>DersKoçum - Öğrenci Takip Portalı v1.8.11</title>
+    <title>DersKoçum - Öğrenci Takip Portalı v1.8.12</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -40,7 +40,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-slate-900 text-lg leading-tight">DersKoçum</h1>
-                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.11</span>
+                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.12</span>
                 </div>
             </div>
 
@@ -446,12 +446,12 @@
             { id: "9", firstName: "Öznur", lastName: "Erdoğan", fullName: "Öznur Erdoğan", class: "YKS Eşit Ağırlık", password: "12345", dailyQuestions: [], exams: [] }
         ];
 
-        let studentList = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
+        let studentList = [];
 
-        const APP_VERSION = "v1.8.11";
+        const APP_VERSION = "v1.8.12";
         if (localStorage.getItem('app_version') !== APP_VERSION) {
             localStorage.setItem('app_version', APP_VERSION);
-            localStorage.removeItem('studentList'); // Eski bozuk önbelleği tamamen temizle
+            localStorage.removeItem('studentList'); // Yerel bozuk önbelleği tamamen temizle
         }
 
         const tytMaxQ = { turkce: 40, matematik: 40, sosyal: 20, fizik: 7, kimya: 7, biyoloji: 6 };
@@ -482,9 +482,10 @@
             return dateStr;
         }
 
+        // Kesin Veri Birleştirme: Sunucudaki veriyi asla ezmez, eksiksiz birleştirir
         function mergeStudentData(localStudents, remoteStudents) {
             return remoteStudents.map(remoteS => {
-                const localS = localStudents.find(l => l.id === remoteS.id || (l.fullName && l.fullName.toLowerCase() === remoteS.fullName.toLowerCase()));
+                const localS = localStudents.find(l => l.id === remoteS.id || (l.fullName && l.fullName.toLowerCase().trim() === remoteS.fullName.toLowerCase().trim()));
                 if (!localS) return remoteS;
 
                 const examMap = new Map();
@@ -512,7 +513,7 @@
             if (currentRole === 'koc') {
                 renderKocPanel();
             }
-            alert("Canlı veriler Google Sheets üzerinden başarıyla güncellendi!");
+            alert("Google Sheets sunucusundaki tüm sınavlar ve veriler başarıyla yüklendi!");
         }
 
         async function fetchStudentsFromSheet() {
@@ -521,9 +522,12 @@
                 const data = await response.json();
                 if (data) {
                     if (data.students && Array.isArray(data.students)) {
+                        // Doğrudan Google Sheets'ten gelen veriyi baz alıyoruz
                         const localStored = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
                         studentList = mergeStudentData(localStored, data.students);
                         localStorage.setItem('studentList', JSON.stringify(studentList));
+                    } else {
+                        studentList = defaultStudents;
                     }
                     if (data.koc && data.koc.password) {
                         kocAccount = data.koc;
@@ -531,7 +535,8 @@
                     }
                 }
             } catch (err) {
-                console.log("Sheets bağlantı hatası, yerel veriler kullanılıyor:", err);
+                console.log("Sheets bağlantı hatası:", err);
+                studentList = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
             }
         }
 
@@ -593,25 +598,29 @@
             }
         }
 
-        function handleKocLogin(e) {
+        async function handleKocLogin(e) {
             e.preventDefault();
             const email = document.getElementById('kocEmailInput').value.trim().toLowerCase();
             const password = document.getElementById('kocPasswordInput').value.trim();
+
+            await fetchStudentsFromSheet();
 
             if (email === kocAccount.email.toLowerCase() && password === kocAccount.password) {
                 currentUser = { email: kocAccount.email, name: "Mesut Keskin (Koç)" };
                 currentRole = "koc";
                 saveSession();
-                fetchStudentsFromSheet().then(() => renderApp());
+                renderApp();
             } else {
                 alert("E-posta adresi veya şifre hatalı!");
             }
         }
 
-        function handleOgrenciLogin(e) {
+        async function handleOgrenciLogin(e) {
             e.preventDefault();
             const nameInput = document.getElementById('ogrenciNameInput').value.trim().toLowerCase();
             const passwordInput = document.getElementById('ogrenciPasswordInput').value.trim();
+
+            await fetchStudentsFromSheet();
 
             const foundStudent = studentList.find(s => 
                 s.fullName && s.fullName.toLowerCase() === nameInput && s.password === passwordInput
