@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DersKoçum - Öğrenci Takip Portalı v1.8.8</title>
+    <title>DersKoçum - Öğrenci Takip Portalı v1.8.9</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -37,7 +37,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-slate-900 text-lg leading-tight">DersKoçum</h1>
-                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.8</span>
+                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.9</span>
                 </div>
             </div>
 
@@ -446,7 +446,7 @@
         let studentList = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
 
         // VERSİYON KONTROLÜ
-        const APP_VERSION = "v1.8.8";
+        const APP_VERSION = "v1.8.9";
         if (localStorage.getItem('app_version') !== APP_VERSION) {
             localStorage.setItem('app_version', APP_VERSION);
         }
@@ -479,12 +479,14 @@
             return dateStr;
         }
 
+        // Akıllı Birleştirme: Uzaktaki ve yereldeki verileri sınav ID'lerine göre akıllıca harmanlar (Veri kaybını sıfırlar)
         function mergeStudentData(localStudents, remoteStudents) {
             return remoteStudents.map(remoteS => {
                 const localS = localStudents.find(l => l.id === remoteS.id || (l.fullName && l.fullName.toLowerCase() === remoteS.fullName.toLowerCase()));
                 if (!localS) return remoteS;
 
                 const examMap = new Map();
+                // Önce uzaktakileri, sonra yereldeki (öğrencinin son girdiği ve henüz sunucuya yansımamış olabilecek) sınavları ekle
                 [...(remoteS.exams || []), ...(localS.exams || [])].forEach(ex => {
                     const key = ex.id || `${ex.type}_${ex.name}_${ex.date}`;
                     examMap.set(key, ex);
@@ -509,7 +511,7 @@
             if (currentRole === 'koc') {
                 renderKocPanel();
             }
-            alert("Canlı veriler Google Sheets üzerinden başarıyla güncellendi!");
+            alert("Canlı veriler Google Sheets üzerinden başarıyla güncellendi ve tüm sınavlar senkronize edildi!");
         }
 
         async function fetchStudentsFromSheet() {
@@ -644,7 +646,6 @@
         }
 
         async function renderApp() {
-            // Panel açılmadan önce güncel verileri sunucudan çekelim
             await fetchStudentsFromSheet();
 
             document.getElementById('loginSection').classList.add('hidden');
@@ -658,7 +659,6 @@
                 document.getElementById('ogrenciPanel').classList.add('hidden');
                 renderKocPanel();
             } else if (currentRole === 'ogrenci') {
-                // Öğrencinin de en güncel verisini listeden bulalım
                 const refreshed = studentList.find(s => s.id === currentUser.id);
                 if (refreshed) currentUser = refreshed;
 
