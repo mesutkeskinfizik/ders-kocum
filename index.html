@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DersKoçum - Öğrenci Takip Portalı v1.8.6</title>
+    <title>DersKoçum - Öğrenci Takip Portalı v1.8.7</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -37,7 +37,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-slate-900 text-lg leading-tight">DersKoçum</h1>
-                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.6</span>
+                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.7</span>
                 </div>
             </div>
 
@@ -115,6 +115,9 @@
                     <p class="text-xs text-slate-500 mt-0.5">Öğrencilerin verileri yönetilir.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    <button onclick="manualRefreshData()" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrows-rotate"></i> Canlı Verileri Yenile
+                    </button>
                     <button onclick="openStudentPasswordsModal()" class="px-3 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
                         <i class="fa-solid fa-key"></i> Öğrenci Şifrelerini Yönet
                     </button>
@@ -408,6 +411,8 @@
 
     <!-- SCRIPT -->
     <script>
+        const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbwpMdblY9LySxEmSdmtZMotXlActsf-dNgE9oTK3uAT5-fWr-3Voh8nLl8F2BAJMQr27g/exec";
+
         let currentUser = null;
         let currentRole = null;
         let activeExamTab = "TYT";
@@ -440,7 +445,7 @@
 
         let studentList = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
 
-        // Her dersin kendi soru sayısı (Maksimum Net Sınırı)
+        // Her dersin kendi soru sayısı (Maksimum Sınır)
         const lessonMaxQuestions = {
             turkce: 40,
             matematik: 40,
@@ -482,8 +487,43 @@
             return dateStr;
         }
 
-        window.onload = function() {
-            checkActiveSession();
+        async function manualRefreshData() {
+            await fetchStudentsFromSheet();
+            if (currentRole === 'koc') {
+                renderKocPanel();
+            }
+            alert("Google Sheets sunucusundaki veriler başarıyla güncellendi!");
+        }
+
+        async function fetchStudentsFromSheet() {
+            try {
+                const response = await fetch(GOOGLE_SHEET_URL + "?t=" + Date.now(), { cache: "reload" });
+                const data = await response.json();
+                if (data && data.students && Array.isArray(data.students)) {
+                    studentList = data.students;
+                    localStorage.setItem('studentList', JSON.stringify(studentList));
+                }
+            } catch (err) {
+                console.log("Sheets bağlantı hatası, yerel veriler kullanılıyor:", err);
+            }
+        }
+
+        async function syncDataToSheet() {
+            try {
+                const payload = {
+                    students: studentList,
+                    koc: kocAccount
+                };
+                const jsonStr = encodeURIComponent(JSON.stringify(payload));
+                await fetch(GOOGLE_SHEET_URL + "?action=save&data=" + jsonStr, { method: "GET", cache: "reload" });
+            } catch (err) {
+                console.log("Sheets kayıt hatası:", err);
+            }
+        }
+
+        window.onload = async function() { 
+            await fetchStudentsFromSheet();
+            checkActiveSession(); 
             onExamTypeChange();
         };
 
@@ -526,10 +566,12 @@
             }
         }
 
-        function handleKocLogin(e) {
+        async function handleKocLogin(e) {
             e.preventDefault();
             const email = document.getElementById('kocEmailInput').value.trim().toLowerCase();
             const password = document.getElementById('kocPasswordInput').value.trim();
+
+            await fetchStudentsFromSheet();
 
             if (email === kocAccount.email.toLowerCase() && password === kocAccount.password) {
                 currentUser = { email: kocAccount.email, name: "Mesut Keskin (Koç)" };
@@ -541,10 +583,12 @@
             }
         }
 
-        function handleOgrenciLogin(e) {
+        async function handleOgrenciLogin(e) {
             e.preventDefault();
             const nameInput = document.getElementById('ogrenciNameInput').value.trim().toLowerCase();
             const passwordInput = document.getElementById('ogrenciPasswordInput').value.trim();
+
+            await fetchStudentsFromSheet();
 
             const foundStudent = studentList.find(s => 
                 s.fullName && s.fullName.toLowerCase() === nameInput && s.password === passwordInput
@@ -579,7 +623,9 @@
             document.getElementById('kocPasswordBtn').classList.add('hidden');
         }
 
-        function renderApp() {
+        async function renderApp() {
+            await fetchStudentsFromSheet();
+
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('userHeaderActions').classList.remove('hidden');
 
@@ -697,6 +743,7 @@
             if (confirm(`${student.fullName} isimli öğrenciyi silmek istediğinize emin misiniz?`)) {
                 studentList = studentList.filter(s => s.id !== id);
                 localStorage.setItem('studentList', JSON.stringify(studentList));
+                syncDataToSheet();
                 renderKocPanel();
             }
         }
@@ -734,11 +781,13 @@
             if (student && newPass) {
                 student.password = newPass;
                 localStorage.setItem('studentList', JSON.stringify(studentList));
+                syncDataToSheet();
                 alert(`${student.fullName} öğrencisinin şifresi güncellendi: ${newPass}`);
             }
         }
 
-        function openStudentDetailModal(studentId) {
+        async function openStudentDetailModal(studentId) {
+            await fetchStudentsFromSheet();
             const student = studentList.find(s => s.id === studentId);
             if (!student) return;
 
@@ -846,7 +895,7 @@
             Object.entries(lessonStats).forEach(([lesKey, stat]) => {
                 hasData = true;
                 const avgNet = stat.totalNet / stat.count;
-                const maxQ = lessonMaxQuestions[lesKey] || 40; // Her dersin kendi soru sayısı
+                const maxQ = lessonMaxQuestions[lesKey] || 40;
                 
                 let successRate = (avgNet / maxQ) * 100;
                 if (successRate > 100) successRate = 100;
@@ -1026,7 +1075,7 @@
             document.getElementById('dailyQuestionModal').classList.add('hidden');
         }
 
-        function handleSaveDailyQuestions(e) {
+        async function handleSaveDailyQuestions(e) {
             e.preventDefault();
             const date = document.getElementById('dailyQuestionDate').value;
             const questions = {
@@ -1045,7 +1094,7 @@
             if (!currentUser.dailyQuestions) currentUser.dailyQuestions = [];
             currentUser.dailyQuestions.push({ id: Date.now().toString(), date, questions });
 
-            updateCurrentStudentInStorage();
+            await updateCurrentStudentInStorage();
             closeDailyQuestionModal();
             renderOgrenciPanel();
             alert("Günlük soru sayısı kaydedildi!");
@@ -1124,7 +1173,7 @@
             document.getElementById('totalExamNet').innerText = totalNet.toFixed(2);
         }
 
-        function handleSaveExam(e) {
+        async function handleSaveExam(e) {
             e.preventDefault();
             const type = document.getElementById('examTypeSelect').value;
             const name = document.getElementById('examNameInput').value.trim();
@@ -1159,17 +1208,18 @@
             if (!currentUser.exams) currentUser.exams = [];
             currentUser.exams.push(newExam);
 
-            updateCurrentStudentInStorage();
+            await updateCurrentStudentInStorage();
             closeExamModal();
             renderOgrenciPanel();
             alert(`${type} Deneme Sınavı başarıyla kaydedildi!`);
         }
 
-        function updateCurrentStudentInStorage() {
+        async function updateCurrentStudentInStorage() {
             const sIndex = studentList.findIndex(s => s.id === currentUser.id);
             if (sIndex !== -1) {
                 studentList[sIndex] = currentUser;
                 localStorage.setItem('studentList', JSON.stringify(studentList));
+                await syncDataToSheet();
                 saveSession();
             }
         }
@@ -1177,7 +1227,7 @@
         function openAddStudentModal() { document.getElementById('addStudentModal').classList.remove('hidden'); }
         function closeAddStudentModal() { document.getElementById('addStudentModal').classList.add('hidden'); }
 
-        function handleAddStudent(e) {
+        async function handleAddStudent(e) {
             e.preventDefault();
             const firstName = document.getElementById('newStudentFirstName').value.trim();
             const lastName = document.getElementById('newStudentLastName').value.trim();
@@ -1198,6 +1248,7 @@
 
             studentList.push(newStudent);
             localStorage.setItem('studentList', JSON.stringify(studentList));
+            await syncDataToSheet();
             closeAddStudentModal();
             renderKocPanel();
             alert(`${newStudent.fullName} sisteme eklendi! Varsayılan şifresi: 12345`);
@@ -1206,7 +1257,7 @@
         function openPasswordModal() { document.getElementById('passwordModal').classList.remove('hidden'); }
         function closePasswordModal() { document.getElementById('passwordModal').classList.add('hidden'); }
 
-        function handlePasswordChange(e) {
+        async function handlePasswordChange(e) {
             e.preventDefault();
             const pass1 = document.getElementById('newPasswordInput').value.trim();
             const pass2 = document.getElementById('newPasswordConfirmInput').value.trim();
@@ -1218,6 +1269,7 @@
 
             kocAccount.password = pass1;
             localStorage.setItem('kocAccount', JSON.stringify(kocAccount));
+            await syncDataToSheet();
 
             closePasswordModal();
             alert("Koç şifreniz başarıyla güncellendi!");
