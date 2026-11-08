@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DersKoçum - Öğrenci Takip Portalı v1.8.5</title>
+    <title>DersKoçum - Öğrenci Takip Portalı v1.8.6</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -32,7 +32,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-slate-900 text-lg leading-tight">DersKoçum</h1>
-                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.5</span>
+                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v1.8.6</span>
                 </div>
             </div>
 
@@ -308,7 +308,12 @@
                     <h3 id="detailStudentName" class="text-lg font-bold text-slate-900">Öğrenci Detayları</h3>
                     <span id="detailStudentClass" class="text-xs text-slate-500"></span>
                 </div>
-                <button onclick="closeStudentDetailModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <div class="flex items-center gap-2">
+                    <button onclick="printStudentReport()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-print"></i> Öğrenci Raporunu Yazdır
+                    </button>
+                    <button onclick="closeStudentDetailModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
             </div>
             
             <div class="space-y-6 max-h-[75vh] overflow-y-auto p-1">
@@ -433,31 +438,17 @@
             { id: "9", firstName: "Öznur", lastName: "Erdoğan", fullName: "Öznur Erdoğan", class: "YKS Eşit Ağırlık", password: "12345", dailyQuestions: [], exams: [] }
         ];
 
-        let studentList = defaultStudents;
+        let studentList = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
 
-        // VERSİYON KONTROLÜ VE OTOMATİK ÖNBELLEK GÜNCELLEME (Hasan Can -> Halil Can Zorunlu Düzeltme)
-        const APP_VERSION = "v1.8.5";
+        // VERSİYON KONTROLÜ VE ÖNBELLEK GÜNCELLEME
+        const APP_VERSION = "v1.8.6";
         if (localStorage.getItem('app_version') !== APP_VERSION) {
-            localStorage.clear();
             localStorage.setItem('app_version', APP_VERSION);
-            localStorage.setItem('studentList', JSON.stringify(defaultStudents));
         }
 
-        const maxQuestionsMap = {
-            turkce: 40,
-            matematik: 40,
-            sosyal: 20,
-            fizik: 14,
-            kimya: 13,
-            biyoloji: 13,
-            edebiyat: 24,
-            tarih1: 10,
-            cografya1: 6,
-            tarih2: 11,
-            cografya2: 11,
-            felsefe: 12,
-            din: 6
-        };
+        // TYT ve AYT Dersleri İçin Gerçek Soru Sayıları Mapi
+        const tytMaxQ = { turkce: 40, matematik: 40, sosyal: 20, fizik: 7, kimya: 7, biyoloji: 6 };
+        const aytMaxQ = { matematik: 40, fizik: 14, kimya: 13, biyoloji: 13, edebiyat: 24, tarih1: 10, cografya1: 6, tarih2: 11, cografya2: 11, felsefe: 12, din: 6 };
 
         const lessonNamesMap = {
             turkce: "Türkçe",
@@ -484,6 +475,34 @@
             return dateStr;
         }
 
+        // Akıllı Veri Birleştirme (Merge) - Veri Kaybını ve Üstüne Yazmayı Önler
+        function mergeStudentData(localStudents, remoteStudents) {
+            return remoteStudents.map(remoteS => {
+                const localS = localStudents.find(l => l.id === remoteS.id || (l.fullName && l.fullName.toLowerCase() === remoteS.fullName.toLowerCase()));
+                if (!localS) return remoteS;
+
+                // Sınavları akıllı birleştir (ID çakışmasını önle, yeni eklenenleri koru)
+                const examMap = new Map();
+                [...(remoteS.exams || []), ...(localS.exams || [])].forEach(ex => {
+                    const key = ex.id || `${ex.type}_${ex.name}_${ex.date}`;
+                    examMap.set(key, ex);
+                });
+
+                // Günlük soruları akıllı birleştir
+                const dailyMap = new Map();
+                [...(remoteS.dailyQuestions || []), ...(localS.dailyQuestions || [])].forEach(dq => {
+                    const key = dq.id || dq.date;
+                    dailyMap.set(key, dq);
+                });
+
+                return {
+                    ...remoteS,
+                    exams: Array.from(examMap.values()),
+                    dailyQuestions: Array.from(dailyMap.values())
+                };
+            });
+        }
+
         async function manualRefreshData() {
             await fetchStudentsFromSheet();
             if (currentRole === 'koc') {
@@ -498,16 +517,8 @@
                 const data = await response.json();
                 if (data) {
                     if (data.students && Array.isArray(data.students)) {
-                        // Eğer sheets'ten gelen eski listede Hasan Can varsa Halil Can ile değiştir
-                        studentList = data.students.map(s => {
-                            if (s.fullName && s.fullName.toLowerCase().includes("hasan can")) {
-                                return { ...s, firstName: "Halil Can", fullName: "Halil Can Deniz" };
-                            }
-                            return s;
-                        });
-                        localStorage.setItem('studentList', JSON.stringify(studentList));
-                    } else if (Array.isArray(data) && data.length > 0 && data[0] && data[0].fullName) {
-                        studentList = data;
+                        const localStored = JSON.parse(localStorage.getItem('studentList')) || studentList;
+                        studentList = mergeStudentData(localStored, data.students);
                         localStorage.setItem('studentList', JSON.stringify(studentList));
                     }
                     if (data.koc && data.koc.password) {
@@ -696,23 +707,31 @@
             });
         }
 
+        // Koç Özel: Son 7 Gün İçinde Veri Girişi Yapan Öğrenciler Takibi (Düzeltildi)
         function renderWeeklyActivityTracker() {
             const container = document.getElementById('weeklyActivityTracker');
             container.innerHTML = "";
 
             const now = new Date();
-            const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+            const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
 
             let activeCount = 0;
 
             studentList.forEach(student => {
                 if (!student || !student.fullName) return;
 
-                let hasRecentDaily = (student.dailyQuestions || []).some(dq => new Date(dq.date) >= sevenDaysAgo);
-                let hasRecentExam = (student.exams || []).some(ex => new Date(ex.date) >= sevenDaysAgo);
-                let isRecentActive = hasRecentDaily || hasRecentExam;
+                let hasRecentDaily = (student.dailyQuestions || []).some(dq => {
+                    if (!dq.date) return false;
+                    const d = new Date(dq.date + "T00:00:00");
+                    return d >= sevenDaysAgo;
+                });
+                let hasRecentExam = (student.exams || []).some(ex => {
+                    if (!ex.date) return false;
+                    const d = new Date(ex.date + "T00:00:00");
+                    return d >= sevenDaysAgo;
+                });
 
-                if (isRecentActive) {
+                if (hasRecentDaily || hasRecentExam) {
                     activeCount++;
                     const card = document.createElement('div');
                     card.className = "bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center justify-between";
@@ -860,6 +879,38 @@
             document.getElementById('studentDetailModal').classList.add('hidden');
         }
 
+        // Öğrenci Raporunu Yazdırma Fonksiyonu
+        function printStudentReport() {
+            const modalContent = document.getElementById('studentDetailModal').querySelector('.max-w-4xl').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Öğrenci Gelişim Raporu</title>
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <style>
+                        body { padding: 20px; background: white; font-family: sans-serif; }
+                        button, .fa-xmark { display: none !important; }
+                    </style>
+                </head>
+                <body>
+                    <div class="max-w-3xl mx-auto space-y-6">
+                        <div class="text-center border-b pb-4 mb-4">
+                            <h1 class="text-2xl font-bold text-slate-900">DersKoçum - Öğrenci Gelişim Raporu</h1>
+                            <p class="text-xs text-slate-500">Rapor Tarihi: ${new Date().toLocaleDateString('tr-TR')}</p>
+                        </div>
+                        ${modalContent}
+                    </div>
+                    <script>
+                        setTimeout(() => { window.print(); window.close(); }, 500);
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        // Ders Başarı Oranı Analizi (TYT ve AYT gerçek soru sayılarına göre hassas oran)
         function renderLessonSuccessCards(exams, containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = "";
@@ -872,9 +923,10 @@
             let lessonStats = {};
             exams.forEach(ex => {
                 if (ex.lessons) {
+                    const maxMap = (ex.type === "TYT") ? tytMaxQ : aytMaxQ;
                     Object.entries(ex.lessons).forEach(([lesKey, lesData]) => {
                         if (!lessonStats[lesKey]) {
-                            lessonStats[lesKey] = { totalNet: 0, count: 0 };
+                            lessonStats[lesKey] = { totalNet: 0, count: 0, maxQ: maxMap[lesKey] || 40 };
                         }
                         lessonStats[lesKey].totalNet += parseFloat(lesData.net) || 0;
                         lessonStats[lesKey].count += 1;
@@ -886,7 +938,7 @@
             Object.entries(lessonStats).forEach(([lesKey, stat]) => {
                 hasData = true;
                 const avgNet = stat.totalNet / stat.count;
-                const maxQ = maxQuestionsMap[lesKey] || 40;
+                const maxQ = stat.maxQ;
                 let successRate = (avgNet / maxQ) * 100;
                 if (successRate > 100) successRate = 100;
                 if (successRate < 0) successRate = 0;
@@ -896,7 +948,7 @@
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
                         <span class="font-bold text-slate-800 text-xs uppercase">${lessonNamesMap[lesKey] || lesKey}</span>
-                        <span class="text-[10px] text-rose-500 font-semibold">Ort. Net: ${avgNet.toFixed(1)}</span>
+                        <span class="text-[10px] text-rose-500 font-semibold">Ort. Net: ${avgNet.toFixed(1)} / Max: ${maxQ}</span>
                     </div>
                     <div class="flex items-baseline gap-1 mt-1">
                         <span class="text-xl font-extrabold text-rose-600">%${successRate.toFixed(1)}</span>
