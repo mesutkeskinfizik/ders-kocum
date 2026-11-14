@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>DersKoçum - Öğrenci Takip Portalı v2.0.3</title>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>DersKoçum - Öğrenci Takip Portalı v2.0.4</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -12,14 +14,24 @@
     <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .gradient-bg { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
-        #netlify-badge, a[href*="netlify.com"], img[alt*="Deploys by Netlify"] { display: none !important; }
-        @media print { body { background: white !important; } button, .no-print { display: none !important; } }
+        .gradient-bg {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        #netlify-badge, a[href*="netlify.com"], img[alt*="Deploys by Netlify"] {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        @media print {
+            body { background: white !important; }
+            button, .no-print { display: none !important; }
+            .max-h-\[75vh\] { max-height: none !important; overflow: visible !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 min-h-screen flex flex-col">
 
-    <!-- ÜST MENÜ -->
+    <!-- ÜST MENÜ (NAVBAR) -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -28,7 +40,10 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-slate-900 text-lg leading-tight">DersKoçum</h1>
-                    <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v2.0.3</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">v2.0.4</span>
+                        <span id="syncStatusBadge" class="text-[11px] text-emerald-600 font-medium hidden"><i class="fa-solid fa-cloud"></i> Bulut Aktif</span>
+                    </div>
                 </div>
             </div>
 
@@ -47,88 +62,257 @@
         </div>
     </header>
 
-    <!-- ANA İÇERİK -->
+    <!-- ANA İÇERİK ALANI -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
 
-        <!-- GİRİŞ EKRANI -->
+        <!-- 1. GİRİŞ SEÇİMİ VE FORM EKRANI -->
         <section id="loginSection" class="max-w-md mx-auto my-12 bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
             <div class="text-center mb-8">
                 <div class="w-16 h-16 gradient-bg rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-lg">
                     <i class="fa-solid fa-user-lock"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-900">Hoş Geldiniz</h2>
-                <p class="text-sm text-slate-500 mt-1">Rolünüzü seçiniz</p>
+                <p class="text-sm text-slate-500 mt-1">Lütfen giriş yapacağınız rolü seçiniz</p>
             </div>
 
             <div class="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-xl mb-6">
-                <button id="tabKocBtn" onclick="switchLoginTab('koc')" class="py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-indigo-600 transition">Koç Girişi</button>
-                <button id="tabOgrenciBtn" onclick="switchLoginTab('ogrenci')" class="py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition">Öğrenci Girişi</button>
+                <button id="tabKocBtn" onclick="switchLoginTab('koc')" class="py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-indigo-600 transition">
+                    <i class="fa-solid fa-user-tie mr-1"></i> Koç Girişi
+                </button>
+                <button id="tabOgrenciBtn" onclick="switchLoginTab('ogrenci')" class="py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition">
+                    <i class="fa-solid fa-user-graduate mr-1"></i> Öğrenci Girişi
+                </button>
             </div>
 
             <form id="kocLoginForm" onsubmit="handleKocLogin(event)" class="space-y-4">
-                <div><label class="block text-xs font-semibold text-slate-700 mb-1">E-Posta</label><input type="email" id="kocEmailInput" required value="mesutkeskinfizik@gmail.com" class="w-full px-4 py-2.5 text-sm border rounded-xl"></div>
-                <div><label class="block text-xs font-semibold text-slate-700 mb-1">Şifre</label><input type="password" id="kocPasswordInput" required placeholder="Şifreniz" class="w-full px-4 py-2.5 text-sm border rounded-xl"></div>
-                <button type="submit" class="w-full py-3 gradient-bg text-white font-semibold rounded-xl shadow-md">Koç Paneline Giriş Yap</button>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">E-Posta Adresi</label>
+                    <input type="email" id="kocEmailInput" required value="mesutkeskinfizik@gmail.com" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Şifre</label>
+                    <input type="password" id="kocPasswordInput" required placeholder="Koç Şifrenizi Girin" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <button type="submit" id="btnKocSubmit" class="w-full py-3 gradient-bg text-white font-semibold rounded-xl hover:opacity-90 transition shadow-md">
+                    Koç Paneline Giriş Yap
+                </button>
             </form>
 
             <form id="ogrenciLoginForm" onsubmit="handleOgrenciLogin(event)" class="space-y-4 hidden">
-                <div><label class="block text-xs font-semibold text-slate-700 mb-1">Ad Soyad</label><input type="text" id="ogrenciNameInput" required placeholder="Örn: Halil Can Deniz" class="w-full px-4 py-2.5 text-sm border rounded-xl"></div>
-                <div><label class="block text-xs font-semibold text-slate-700 mb-1">Şifre</label><input type="password" id="ogrenciPasswordInput" required placeholder="Şifreniz" class="w-full px-4 py-2.5 text-sm border rounded-xl"></div>
-                <button type="submit" class="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl shadow-md">Öğrenci Paneline Giriş Yap</button>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Adınız ve Soyadınız</label>
+                    <input type="text" id="ogrenciNameInput" required placeholder="Örn: Halil Can Deniz" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Şifreniz</label>
+                    <input type="password" id="ogrenciPasswordInput" required placeholder="Şifrenizi Girin" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <button type="submit" id="btnOgrenciSubmit" class="w-full py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition shadow-md">
+                    Öğrenci Paneline Giriş Yap
+                </button>
             </form>
         </section>
 
-        <!-- KOÇ PANELİ -->
+        <!-- 2. KOÇ PANELİ -->
         <section id="kocPanel" class="hidden space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div>
                     <h2 class="text-xl font-bold text-slate-900">Koç Yönetim Paneli</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Öğrenci verileri canlı senkronize edilir.</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Öğrencilerin verileri Google Sheets üzerinden canlı senkronize edilir.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button onclick="manualRefreshData()" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                    <button id="btnManualRefresh" onclick="manualRefreshData()" class="px-3 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
                         <i class="fa-solid fa-arrows-rotate"></i> Canlı Verileri Yenile
                     </button>
                     <button onclick="openStudentPasswordsModal()" class="px-3 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-key"></i> Şifreleri Yönet
+                        <i class="fa-solid fa-key"></i> Öğrenci Şifrelerini Yönet
                     </button>
-                    <button onclick="openAddStudentModal()" class="px-4 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl shadow-sm">Yeni Öğrenci Ekle</button>
+                    <button onclick="openAddStudentModal()" class="px-4 py-2.5 gradient-bg text-white text-sm font-semibold rounded-xl hover:opacity-90 transition shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Yeni Öğrenci Ekle
+                    </button>
                 </div>
             </div>
+
+            <!-- KOÇ ÖZEL: HAFTALIK VERİ GİRİŞİ YAPAN ÖĞRENCİLER TAKİP PANELİ -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b pb-3">
+                    <i class="fa-solid fa-clipboard-check text-indigo-600"></i> Bu Hafta Veri Girişi Yapan Öğrenciler (Son 7 Gün)
+                </h3>
+                <div id="weeklyActivityTracker" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+            </div>
+
+            <!-- Öğrenci Kartları Listesi -->
             <div id="studentListGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </section>
 
-        <!-- ÖĞRENCİ PANELİ -->
+        <!-- 3. ÖĞRENCİ PANELİ -->
         <section id="ogrenciPanel" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-2xl border shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 id="ogrenciWelcomeTitle" class="text-xl font-bold text-slate-900"></h2>
                     <p id="ogrenciSubInfo" class="text-xs text-slate-500 mt-1"></p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button onclick="syncLocalToCloudManual()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition flex items-center gap-2">
+                    <button onclick="syncLocalToCloudManual()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Buluta Eşitle
                     </button>
-                    <button onclick="openDailyQuestionModal()" class="px-4 py-2 bg-indigo-500 text-white text-xs font-semibold rounded-xl">Günlük Soru Gir</button>
-                    <button onclick="openExamModal()" class="px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-xl">Deneme Sınavı Gir</button>
+                    <button onclick="openDailyQuestionModal()" class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl hover:bg-indigo-700 transition shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square"></i> Günlük Soru Gir
+                    </button>
+                    <button onclick="openExamModal()" class="px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-xl hover:bg-emerald-700 transition shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-file-signature"></i> Deneme Sınavı Gir
+                    </button>
                 </div>
             </div>
 
+            <!-- ÖZET İSTATİSTİK KARTLARI -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="bg-white p-5 rounded-2xl border shadow-sm"><span class="text-xs font-semibold text-slate-500 uppercase">Hedef</span><div id="statTargetQuestion" class="text-2xl font-bold text-slate-900 mt-1">0</div></div>
-                <div class="bg-white p-5 rounded-2xl border shadow-sm"><span class="text-xs font-semibold text-slate-500 uppercase">Çözülen</span><div id="statSolvedQuestion" class="text-2xl font-bold text-indigo-600 mt-1">0</div></div>
-                <div class="bg-white p-5 rounded-2xl border shadow-sm"><span class="text-xs font-semibold text-slate-500 uppercase">Sınav Sayısı</span><div id="statExamCount" class="text-2xl font-bold text-emerald-600 mt-1">0</div></div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-xs font-semibold text-slate-500 uppercase">Haftalık Hedef Soru</span>
+                    <div id="statTargetQuestion" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-xs font-semibold text-slate-500 uppercase">Toplam Çözülen Soru</span>
+                    <div id="statSolvedQuestion" class="text-2xl font-bold text-indigo-600 mt-1">0</div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <span class="text-xs font-semibold text-slate-500 uppercase">Girilmiş Sınav Sayısı</span>
+                    <div id="statExamCount" class="text-2xl font-bold text-emerald-600 mt-1">0</div>
+                </div>
             </div>
 
-            <div class="bg-white p-6 rounded-2xl border shadow-sm">
-                <h3 class="text-sm font-bold text-slate-900 mb-4">Ders Başarı Oranı Analizi (Soru Sayısına Göre)</h3>
-                <div id="lessonSuccessAnalysisContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"><p class="text-xs text-slate-400">Veri yok.</p></div>
+            <!-- GELİŞİM GRAFİKLERİ -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-indigo-600"></i> TYT Toplam Net Gelişimi
+                    </h3>
+                    <canvas id="chartTytNet" height="200"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-purple-600"></i> AYT Toplam Net Gelişimi
+                    </h3>
+                    <canvas id="chartAytNet" height="200"></canvas>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
+                    <h3 class="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-emerald-600"></i> Günlük Soru Çözüm Grafiği
+                    </h3>
+                    <canvas id="chartWeeklyQuestions" height="100"></canvas>
+                </div>
+            </div>
+
+            <!-- DERS BAŞARI ORANI ANALİZİ (ÖĞRENCİ) -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 border-b pb-3">
+                    <i class="fa-solid fa-chart-pie text-rose-600"></i> Ders Başarı Oranı Analizi (Soru Sayısına Göre % Başarı)
+                </h3>
+                <div id="lessonSuccessAnalysisContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <p class="text-xs text-slate-400">Henüz yeterli deneme verisi bulunmuyor.</p>
+                </div>
+            </div>
+
+            <!-- DENEME GEÇMİŞİ LİSTESİ -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h3 class="text-sm font-bold text-slate-900">Sınav Geçmişiniz</h3>
+                    <div class="flex gap-2">
+                        <button id="btnTabTyt" onclick="switchExamTab('TYT')" class="px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-100 text-indigo-700">TYT Sınavları</button>
+                        <button id="btnTabAyt" onclick="switchExamTab('AYT')" class="px-3 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200">AYT Sınavları</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 uppercase font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-3">Tarih</th>
+                                <th class="py-3 px-3">Sınav Adı</th>
+                                <th class="py-3 px-3 text-right">Toplam Net / Detaylar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="examHistoryTableBody">
+                            <tr><td colspan="3" class="py-4 text-center text-slate-400">Henüz deneme kaydı yok.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
     </main>
 
-    <!-- KOÇ ÖĞRENCİ DETAY MODALI -->
+    <!-- MODALLAR -->
+    <div id="dailyQuestionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
+        <div class="bg-white max-w-lg w-full rounded-2xl p-6 shadow-2xl border border-slate-100 my-8">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-900"><i class="fa-solid fa-book-open text-indigo-600 mr-2"></i> Günlük Soru Girişi</h3>
+                <button onclick="closeDailyQuestionModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleSaveDailyQuestions(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tarih</label>
+                    <input type="date" id="dailyQuestionDate" required class="w-full px-3 py-2 text-sm border rounded-xl focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto p-1">
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Türkçe</label><input type="number" min="0" value="0" id="q_turkce" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Matematik</label><input type="number" min="0" value="0" id="q_matematik" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Geometri</label><input type="number" min="0" value="0" id="q_geometri" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Fizik</label><input type="number" min="0" value="0" id="q_fizik" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Kimya</label><input type="number" min="0" value="0" id="q_kimya" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Biyoloji</label><input type="number" min="0" value="0" id="q_biyoloji" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Tarih</label><input type="number" min="0" value="0" id="q_tarih" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Coğrafya</label><input type="number" min="0" value="0" id="q_cografya" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Felsefe</label><input type="number" min="0" value="0" id="q_felsefe" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                    <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">Din Kültürü</label><input type="number" min="0" value="0" id="q_din" class="w-full px-2 py-1.5 text-xs border rounded-lg"></div>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" onclick="closeDailyQuestionModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" id="btnSaveDaily" class="px-4 py-2 text-xs font-semibold text-white gradient-bg rounded-xl shadow-md">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="examModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
+        <div class="bg-white max-w-xl w-full rounded-2xl p-6 shadow-2xl border my-8">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-900"><i class="fa-solid fa-file-signature text-emerald-600 mr-2"></i> Deneme Sonucu Gir</h3>
+                <button onclick="closeExamModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleSaveExam(event)" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tür</label>
+                        <select id="examTypeSelect" onchange="onExamTypeChange()" class="w-full px-3 py-2 text-sm border rounded-xl">
+                            <option value="TYT">TYT Denemesi</option>
+                            <option value="AYT">AYT Denemesi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Sınav Adı</label>
+                        <input type="text" id="examNameInput" required placeholder="Örn: 3D TYT-1" class="w-full px-3 py-2 text-sm border rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tarih</label>
+                        <input type="date" id="examDateInput" required class="w-full px-3 py-2 text-sm border rounded-xl">
+                    </div>
+                </div>
+                <hr class="my-3 border-slate-100">
+                <div id="examLessonsContainer" class="space-y-3 max-h-72 overflow-y-auto p-1"></div>
+                <div class="bg-emerald-600 text-white p-3 rounded-xl flex justify-between items-center shadow-sm">
+                    <span class="font-semibold text-xs">Toplam Net:</span>
+                    <span id="totalExamNet" class="text-xl font-bold">0.00</span>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" onclick="closeExamModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" id="btnSaveExam" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 rounded-xl">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KOÇ ÖĞRENCİ DETAY MODALI (TÜM GRAFİKLER VE YÜZDE ANALİZİ) -->
     <div id="studentDetailModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
         <div class="bg-white max-w-4xl w-full rounded-2xl p-6 shadow-2xl border my-8">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
@@ -136,11 +320,100 @@
                     <h3 id="detailStudentName" class="text-lg font-bold text-slate-900">Öğrenci Detayları</h3>
                     <span id="detailStudentClass" class="text-xs text-slate-500"></span>
                 </div>
-                <button onclick="closeStudentDetailModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <div class="flex items-center gap-2">
+                    <button onclick="printStudentReport()" title="Yazdır veya PDF Kaydet" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-print"></i> Yazdır / PDF
+                    </button>
+                    <button onclick="closeStudentDetailModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
             </div>
-            <div class="space-y-4 max-h-[70vh] overflow-y-auto p-1">
-                <div id="detailExamResults" class="space-y-2"></div>
+            
+            <div class="space-y-6 max-h-[75vh] overflow-y-auto p-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-700 mb-2"><i class="fa-solid fa-chart-line text-indigo-600 mr-1"></i> TYT Net Gelişimi</h4>
+                        <canvas id="detailChartTyt" height="150"></canvas>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-700 mb-2"><i class="fa-solid fa-chart-line text-purple-600 mr-1"></i> AYT Net Gelişimi</h4>
+                        <canvas id="detailChartAyt" height="150"></canvas>
+                    </div>
+                    <div class="md:col-span-2">
+                        <h4 class="text-xs font-bold text-slate-700 mb-2"><i class="fa-solid fa-chart-column text-emerald-600 mr-1"></i> Günlük Soru Çözüm Grafiği</h4>
+                        <canvas id="detailChartWeekly" height="90"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border space-y-3">
+                    <h4 class="text-xs font-bold uppercase text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-rose-600"></i> Ders Başarı Oranı Analizi (Soru Sayısına Göre % Başarı)
+                    </h4>
+                    <div id="detailLessonSuccessContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <p class="text-xs text-slate-400">Henüz deneme verisi yok.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Günlük Soru Takip Kayıtları</h4>
+                    <div id="detailDailyQuestions" class="space-y-2"></div>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">Deneme Sonuçları</h4>
+                    <div id="detailExamResults" class="space-y-3"></div>
+                </div>
             </div>
+        </div>
+    </div>
+
+    <!-- ÖĞRENCİ ŞİFRELERİNİ YÖNETME EKRANI -->
+    <div id="studentPasswordsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 overflow-y-auto">
+        <div class="bg-white max-w-2xl w-full rounded-2xl p-6 shadow-2xl border my-8">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-900"><i class="fa-solid fa-key text-indigo-600 mr-2"></i> Öğrenci Şifreleri Listesi</h3>
+                <button onclick="closeStudentPasswordsModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4">Şifresini unutan öğrencilerinizin şifrelerini buradan görebilir veya değiştirebilirsiniz.</p>
+            <div class="max-h-[60vh] overflow-y-auto space-y-3" id="studentPasswordListContainer"></div>
+        </div>
+    </div>
+
+    <!-- KOÇ ŞİFRE DEĞİŞTİRME MODALI -->
+    <div id="passwordModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white max-w-md w-full rounded-2xl p-6 shadow-2xl border">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-900">Koç Şifresini Değiştir</h3>
+                <button onclick="closePasswordModal()" class="text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handlePasswordChange(event)" class="space-y-4">
+                <div><label class="block text-xs font-semibold text-slate-700 mb-1">Yeni Koç Şifresi</label><input type="password" id="newPasswordInput" required class="w-full px-4 py-2 text-sm border rounded-xl"></div>
+                <div><label class="block text-xs font-semibold text-slate-700 mb-1">Yeni Koç Şifresi (Tekrar)</label><input type="password" id="newPasswordConfirmInput" required class="w-full px-4 py-2 text-sm border rounded-xl"></div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" onclick="closePasswordModal()" class="px-4 py-2 text-xs font-semibold bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold text-white gradient-bg rounded-xl">Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- YENİ ÖĞRENCİ EKLEME MODALI -->
+    <div id="addStudentModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white max-w-md w-full rounded-2xl p-6 shadow-2xl border">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-slate-900">Yeni Öğrenci Ekle</h3>
+                <button onclick="closeAddStudentModal()" class="text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddStudent(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-xs font-semibold mb-1">Adı</label><input type="text" id="newStudentFirstName" required class="w-full px-3 py-2 text-sm border rounded-xl"></div>
+                    <div><label class="block text-xs font-semibold mb-1">Soyadı</label><input type="text" id="newStudentLastName" required class="w-full px-3 py-2 text-sm border rounded-xl"></div>
+                </div>
+                <div><label class="block text-xs font-semibold mb-1">Sınıf / Alan</label><input type="text" id="newStudentClass" value="YKS Sayısal" required class="w-full px-3 py-2 text-sm border rounded-xl"></div>
+                <div><label class="block text-xs font-semibold mb-1">Haftalık Hedef Soru</label><input type="number" id="newStudentTarget" value="1000" required class="w-full px-3 py-2 text-sm border rounded-xl"></div>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" onclick="closeAddStudentModal()" class="px-4 py-2 text-xs font-semibold bg-slate-100 rounded-xl">İptal</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold text-white gradient-bg rounded-xl">Kaydet</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -150,8 +423,22 @@
 
         let currentUser = null;
         let currentRole = null;
-        let kocAccount = JSON.parse(localStorage.getItem('kocAccount')) || { email: "mesutkeskinfizik@gmail.com", password: "MesutHoca" };
+        let activeExamTab = "TYT";
+        let autoRefreshInterval = null;
+
+        let chartTytInstance = null;
+        let chartAytInstance = null;
+        let chartWeeklyInstance = null;
         
+        let detailChartTytInstance = null;
+        let detailChartAytInstance = null;
+        let detailChartWeeklyInstance = null;
+
+        let kocAccount = JSON.parse(localStorage.getItem('kocAccount')) || {
+            email: "mesutkeskinfizik@gmail.com",
+            password: "MesutHoca"
+        };
+
         const defaultStudents = [
             { id: "1", firstName: "Ahmet Hakan", lastName: "Aslan", fullName: "Ahmet Hakan Aslan", class: "YKS Sayısal", password: "12345", targetQuestions: 1000, dailyQuestions: [], exams: [] },
             { id: "2", firstName: "Sultan Sümeyye", lastName: "Gedik", fullName: "Sultan Sümeyye Gedik", class: "YKS Sayısal", password: "12345", targetQuestions: 1000, dailyQuestions: [], exams: [] },
@@ -165,22 +452,86 @@
         ];
 
         let studentList = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
+        studentList.forEach(s => { if (s) s.class = "YKS Sayısal"; });
 
-        // Tüm öğrencilerin sınıfını YKS Sayısal yap
-        studentList.forEach(s => s.class = "YKS Sayısal");
+        const tytMaxQ = { turkce: 40, matematik: 40, sosyal: 20, fizik: 7, kimya: 7, biyoloji: 6 };
+        const aytMaxQ = { matematik: 40, fizik: 14, kimya: 13, biyoloji: 13, edebiyat: 24, tarih1: 10, cografya1: 6, tarih2: 11, cografya2: 11, felsefe: 12, din: 6 };
 
-        const lessonMaxQuestions = { turkce: 40, matematik: 40, sosyal: 20, fizik: 7, kimya: 7, biyoloji: 6, edebiyat: 24, tarih1: 10, cografya1: 6, tarih2: 11, cografya2: 11, felsefe: 12, din: 6 };
-        const lessonNamesMap = { turkce: "Türkçe", matematik: "Matematik", sosyal: "Sosyal Bilgiler", fizik: "Fizik", kimya: "Kimya", biyoloji: "Biyoloji", edebiyat: "Edebiyat", tarih1: "Tarih-1", cografya1: "Coğrafya-1", tarih2: "Tarih-2", cografya2: "Coğrafya-2", felsefe: "Felsefe", din: "Din Kültürü" };
+        const lessonNamesMap = {
+            turkce: "Türkçe",
+            matematik: "Matematik",
+            sosyal: "Sosyal Bilimler",
+            fizik: "Fizik",
+            kimya: "Kimya",
+            biyoloji: "Biyoloji",
+            edebiyat: "Türk Dili ve Edebiyatı",
+            tarih1: "Tarih-1",
+            cografya1: "Coğrafya-1",
+            tarih2: "Tarih-2",
+            cografya2: "Coğrafya-2",
+            felsefe: "Felsefe Grubu",
+            din: "Din Kültürü"
+        };
+
+        function formatDateTR(dateStr) {
+            if (!dateStr) return "";
+            const parts = dateStr.split("-");
+            if (parts.length === 3) {
+                return `${parts[2]}.${parts[1]}.${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        function mergeStudentArrays(localList, remoteList) {
+            const baseList = (remoteList && remoteList.length > 0) ? remoteList : defaultStudents;
+            return baseList.map(remoteS => {
+                const localS = (localList || []).find(l => l.id === remoteS.id || (l.fullName && l.fullName.toLowerCase().trim() === remoteS.fullName.toLowerCase().trim()));
+                if (!localS) return { ...remoteS, class: "YKS Sayısal" };
+
+                const examMap = new Map();
+                [...(remoteS.exams || []), ...(localS.exams || [])].forEach(ex => {
+                    const key = ex.id || `${ex.type}_${ex.name}_${ex.date}`;
+                    examMap.set(key, ex);
+                });
+
+                const dailyMap = new Map();
+                [...(remoteS.dailyQuestions || []), ...(localS.dailyQuestions || [])].forEach(dq => {
+                    const key = dq.id || dq.date;
+                    dailyMap.set(key, dq);
+                });
+
+                return {
+                    ...remoteS,
+                    class: "YKS Sayısal",
+                    exams: Array.from(examMap.values()),
+                    dailyQuestions: Array.from(dailyMap.values())
+                };
+            });
+        }
 
         async function fetchStudentsFromSheet() {
             try {
-                const res = await fetch(GOOGLE_SHEET_URL + "?t=" + Date.now(), { cache: "no-store" });
-                const data = await res.json();
-                if (data && data.students && Array.isArray(data.students)) {
-                    studentList = data.students.map(s => ({ ...s, class: "YKS Sayısal" }));
+                const response = await fetch(GOOGLE_SHEET_URL + "?t=" + Date.now(), { cache: "no-store" });
+                const data = await response.json();
+                if (data) {
+                    const localStored = JSON.parse(localStorage.getItem('studentList')) || defaultStudents;
+                    if (data.students && Array.isArray(data.students) && data.students.length > 0) {
+                        studentList = mergeStudentArrays(localStored, data.students);
+                    } else {
+                        studentList = localStored.map(s => ({ ...s, class: "YKS Sayısal" }));
+                    }
                     localStorage.setItem('studentList', JSON.stringify(studentList));
+                    
+                    if (data.koc && data.koc.password) {
+                        kocAccount = data.koc;
+                        localStorage.setItem('kocAccount', JSON.stringify(kocAccount));
+                    }
+                    document.getElementById('syncStatusBadge').classList.remove('hidden');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                console.error("Sunucudan veri çekme hatası:", err);
+                studentList = (JSON.parse(localStorage.getItem('studentList')) || defaultStudents).map(s => ({ ...s, class: "YKS Sayısal" }));
+            }
         }
 
         async function syncDataToSheet() {
@@ -189,191 +540,832 @@
                 const jsonStr = encodeURIComponent(JSON.stringify(payload));
                 await fetch(GOOGLE_SHEET_URL + "?action=save&data=" + jsonStr, { method: "GET", cache: "no-store" });
                 return true;
-            } catch (err) { return false; }
+            } catch (err) {
+                console.error("Buluta gönderim hatası:", err);
+                return false;
+            }
         }
 
         async function syncLocalToCloudManual() {
             if (!currentUser) return;
-            const idx = studentList.findIndex(s => s.id === currentUser.id);
-            if (idx !== -1) studentList[idx] = currentUser;
+            const sIndex = studentList.findIndex(s => s.id === currentUser.id || s.fullName === currentUser.fullName);
+            if (sIndex !== -1) {
+                studentList[sIndex] = currentUser;
+                localStorage.setItem('studentList', JSON.stringify(studentList));
+            }
             const success = await syncDataToSheet();
-            alert(success ? "Tüm veriler başarıyla buluta eşitlendi!" : "Eşitleme hatası.");
+            if (success) {
+                alert("Tüm sınav ve soru kayıtlarınız başarıyla bulut sunucusuna aktarıldı!");
+            } else {
+                alert("Eşitleme sırasında bağlantı hatası oluştu, internet bağlantınızı kontrol edin.");
+            }
         }
 
         async function manualRefreshData() {
+            const btn = document.getElementById('btnManualRefresh');
+            if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Yenileniyor...`;
             await fetchStudentsFromSheet();
-            if (currentRole === 'koc') renderKocPanel();
-            alert("Veriler güncellendi!");
+            if (currentRole === 'koc') {
+                renderKocPanel();
+            }
+            if (btn) btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Canlı Verileri Yenile`;
+            alert("Tüm öğrencilerin en güncel verileri yüklendi!");
         }
 
-        window.onload = async function() {
+        window.onload = async function() { 
             await fetchStudentsFromSheet();
-            checkActiveSession();
+            checkActiveSession(); 
+            onExamTypeChange();
         };
 
         function checkActiveSession() {
-            const saved = JSON.parse(localStorage.getItem('activeSession'));
-            if (saved && saved.role === "koc") {
-                currentUser = { email: kocAccount.email };
+            const savedSession = JSON.parse(localStorage.getItem('activeSession'));
+            if (savedSession && savedSession.role === "koc") {
+                currentUser = { email: kocAccount.email, name: "Mesut Keskin (Koç)" };
                 currentRole = "koc";
                 renderApp();
-            } else if (saved && saved.user) {
-                currentRole = saved.role;
-                currentUser = studentList.find(s => s.id === saved.user.id || s.fullName === saved.user.fullName) || saved.user;
+            } else if (savedSession && savedSession.user && savedSession.user.fullName) {
+                currentRole = savedSession.role;
+                const found = studentList.find(s => s.fullName && s.fullName.toLowerCase() === savedSession.user.fullName.toLowerCase());
+                currentUser = found || savedSession.user;
                 renderApp();
-            } else { logout(); }
+            } else {
+                logout();
+            }
         }
 
         function switchLoginTab(tab) {
-            document.getElementById('kocLoginForm').classList.toggle('hidden', tab !== 'koc');
-            document.getElementById('ogrenciLoginForm').classList.toggle('hidden', tab !== 'ogrenci');
+            const kocForm = document.getElementById('kocLoginForm');
+            const ogrenciForm = document.getElementById('ogrenciLoginForm');
+            const kocBtn = document.getElementById('tabKocBtn');
+            const ogrenciBtn = document.getElementById('tabOgrenciBtn');
+
+            document.getElementById('kocPasswordInput').value = "";
+            document.getElementById('ogrenciNameInput').value = "";
+            document.getElementById('ogrenciPasswordInput').value = "";
+
+            if (tab === 'koc') {
+                kocForm.classList.remove('hidden');
+                ogrenciForm.classList.add('hidden');
+                kocBtn.className = "py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-indigo-600 transition";
+                ogrenciBtn.className = "py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+            } else {
+                kocForm.classList.add('hidden');
+                ogrenciForm.classList.remove('hidden');
+                ogrenciBtn.className = "py-2 text-sm font-semibold rounded-lg bg-white shadow-sm text-emerald-600 transition";
+                kocBtn.className = "py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-900 transition";
+            }
         }
 
         async function handleKocLogin(e) {
             e.preventDefault();
+            const btn = document.getElementById('btnKocSubmit');
+            btn.innerText = "Veriler Yükleniyor...";
+            btn.disabled = true;
+
+            const email = document.getElementById('kocEmailInput').value.trim().toLowerCase();
+            const password = document.getElementById('kocPasswordInput').value.trim();
+
             await fetchStudentsFromSheet();
-            const email = document.getElementById('kocEmailInput').value.trim();
-            const pass = document.getElementById('kocPasswordInput').value.trim();
-            if (email.toLowerCase() === kocAccount.email.toLowerCase() && pass === kocAccount.password) {
-                currentUser = { email: kocAccount.email };
+
+            btn.innerText = "Koç Paneline Giriş Yap";
+            btn.disabled = false;
+
+            if (email === kocAccount.email.toLowerCase() && password === kocAccount.password) {
+                currentUser = { email: kocAccount.email, name: "Mesut Keskin (Koç)" };
                 currentRole = "koc";
-                localStorage.setItem('activeSession', JSON.stringify({ role: "koc" }));
+                saveSession();
                 renderApp();
-            } else { alert("Hatalı şifre!"); }
+            } else {
+                alert("E-posta adresi veya şifre hatalı!");
+            }
         }
 
         async function handleOgrenciLogin(e) {
             e.preventDefault();
+            const btn = document.getElementById('btnOgrenciSubmit');
+            btn.innerText = "Bağlanılıyor...";
+            btn.disabled = true;
+
+            const nameInput = document.getElementById('ogrenciNameInput').value.trim().toLowerCase();
+            const passwordInput = document.getElementById('ogrenciPasswordInput').value.trim();
+
             await fetchStudentsFromSheet();
-            const name = document.getElementById('ogrenciNameInput').value.trim().toLowerCase();
-            const pass = document.getElementById('ogrenciPasswordInput').value.trim();
-            const found = studentList.find(s => s.fullName && s.fullName.toLowerCase() === name && s.password === pass);
-            if (found) {
-                currentUser = found;
+
+            btn.innerText = "Öğrenci Paneline Giriş Yap";
+            btn.disabled = false;
+
+            const foundStudent = studentList.find(s => 
+                s.fullName && s.fullName.toLowerCase().trim() === nameInput && s.password === passwordInput
+            );
+
+            if (foundStudent) {
+                currentUser = foundStudent;
                 currentRole = "ogrenci";
-                localStorage.setItem('activeSession', JSON.stringify({ role: "ogrenci", user: found }));
+                saveSession();
                 renderApp();
-            } else { alert("Öğrenci adı veya şifre hatalı!"); }
+            } else {
+                alert("Ad Soyad veya şifre hatalı!");
+            }
+        }
+
+        function saveSession() {
+            localStorage.setItem('activeSession', JSON.stringify({ user: currentUser, role: currentRole }));
         }
 
         function logout() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
             localStorage.removeItem('activeSession');
-            currentUser = null; currentRole = null;
+            currentUser = null;
+            currentRole = null;
+            showLoginSection();
+        }
+
+        function showLoginSection() {
             document.getElementById('loginSection').classList.remove('hidden');
             document.getElementById('kocPanel').classList.add('hidden');
             document.getElementById('ogrenciPanel').classList.add('hidden');
             document.getElementById('userHeaderActions').classList.add('hidden');
+            document.getElementById('kocPasswordBtn').classList.add('hidden');
         }
 
         async function renderApp() {
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('userHeaderActions').classList.remove('hidden');
+
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+
             if (currentRole === 'koc') {
                 document.getElementById('headerUserName').innerText = "Koç Paneli";
+                document.getElementById('headerUserRole').innerText = currentUser.email;
+                document.getElementById('kocPasswordBtn').classList.remove('hidden');
                 document.getElementById('kocPanel').classList.remove('hidden');
+                document.getElementById('ogrenciPanel').classList.add('hidden');
                 renderKocPanel();
-            } else {
-                currentUser = studentList.find(s => s.id === currentUser.id) || currentUser;
+
+                autoRefreshInterval = setInterval(async () => {
+                    await fetchStudentsFromSheet();
+                    renderKocPanel();
+                }, 30000);
+
+            } else if (currentRole === 'ogrenci') {
+                const refreshed = studentList.find(s => s.id === currentUser.id);
+                if (refreshed) currentUser = refreshed;
+
                 document.getElementById('headerUserName').innerText = currentUser.fullName;
+                document.getElementById('headerUserRole').innerText = currentUser.class;
+                document.getElementById('kocPasswordBtn').classList.add('hidden');
+                document.getElementById('kocPanel').classList.add('hidden');
                 document.getElementById('ogrenciPanel').classList.remove('hidden');
                 renderOgrenciPanel();
             }
         }
 
         function renderKocPanel() {
+            renderWeeklyActivityTracker();
             const grid = document.getElementById('studentListGrid');
             grid.innerHTML = "";
-            studentList.forEach(st => {
-                if (!st || !st.fullName) return;
-                const solved = (st.dailyQuestions || []).reduce((acc, curr) => acc + Object.values(curr.questions || {}).reduce((a, b) => a + Number(b), 0), 0);
+
+            studentList.forEach(student => {
+                if (!student || !student.fullName) return;
+
+                const totalSolved = (student.dailyQuestions || []).reduce((acc, curr) => {
+                    return acc + Object.values(curr.questions || {}).reduce((a, b) => a + Number(b), 0);
+                }, 0);
+
                 const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded-2xl border shadow-sm space-y-3 relative";
+                card.className = "bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4 hover:border-indigo-200 transition relative";
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <h3 class="font-bold text-slate-900">${st.fullName}</h3>
-                            <span class="text-xs text-slate-500">${st.class}</span>
+                            <h3 class="font-bold text-slate-900 text-base">${student.fullName}</h3>
+                            <span class="text-xs text-slate-500">${student.class}</span>
                         </div>
-                        <button onclick="openStudentDetailModal('${st.id}')" title="Öğrenci Detayları" class="w-8 h-8 flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition text-xs">
-                            <i class="fa-solid fa-chart-line"></i>
-                        </button>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="openStudentDetailModal('${student.id}')" title="Grafikleri ve Yüzde Analizini Gör" class="w-8 h-8 flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition text-sm">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button onclick="deleteStudent('${student.id}')" title="Öğrenciyi Sil" class="w-8 h-8 flex items-center justify-center text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-lg transition text-xs">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex justify-between text-xs font-semibold pt-2 border-t">
-                        <span>Çözülen: ${solved} Soru</span>
-                        <span class="text-emerald-600">Sınav: ${st.exams ? st.exams.length : 0} Adet</span>
-                    </div>`;
+                    <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                        <div>
+                            <span class="block text-[11px] text-slate-400 uppercase font-bold">Toplam Çözülen</span>
+                            <span class="text-sm font-bold text-slate-800">${totalSolved} Soru</span>
+                        </div>
+                        <div>
+                            <span class="block text-[11px] text-slate-400 uppercase font-bold">Deneme Sayısı</span>
+                            <span class="text-sm font-bold text-emerald-600">${student.exams ? student.exams.length : 0} Adet</span>
+                        </div>
+                    </div>
+                `;
                 grid.appendChild(card);
             });
         }
 
-        function openStudentDetailModal(id) {
-            const st = studentList.find(s => s.id === id);
-            if (!st) return;
-            document.getElementById('detailStudentName').innerText = st.fullName;
-            document.getElementById('detailStudentClass').innerText = st.class;
-            const container = document.getElementById('detailExamResults');
+        function renderWeeklyActivityTracker() {
+            const container = document.getElementById('weeklyActivityTracker');
             container.innerHTML = "";
-            if (!st.exams || st.exams.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400">Henüz deneme kaydı yok.</p>`;
+
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+
+            let activeCount = 0;
+
+            studentList.forEach(student => {
+                if (!student || !student.fullName) return;
+
+                let hasRecentDaily = (student.dailyQuestions || []).some(dq => {
+                    if (!dq.date) return false;
+                    const d = new Date(dq.date + "T00:00:00");
+                    return d >= sevenDaysAgo;
+                });
+                let hasRecentExam = (student.exams || []).some(ex => {
+                    if (!ex.date) return false;
+                    const d = new Date(ex.date + "T00:00:00");
+                    return d >= sevenDaysAgo;
+                });
+
+                if (hasRecentDaily || hasRecentExam) {
+                    activeCount++;
+                    const card = document.createElement('div');
+                    card.className = "bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center justify-between";
+                    card.innerHTML = `
+                        <div>
+                            <span class="font-bold text-slate-900 text-xs block">${student.fullName}</span>
+                            <span class="text-[10px] text-emerald-700 font-medium">Bu hafta veri girişi yaptı</span>
+                        </div>
+                        <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+                    `;
+                    container.appendChild(card);
+                }
+            });
+
+            if (activeCount === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Son 7 gün içinde henüz hiçbir öğrenci veri girişi yapmadı.</p>`;
+            }
+        }
+
+        async function deleteStudent(id) {
+            const student = studentList.find(s => s.id === id);
+            if (!student) return;
+
+            if (confirm(`${student.fullName} isimli öğrenciyi silmek istediğinize emin misiniz?`)) {
+                studentList = studentList.filter(s => s.id !== id);
+                localStorage.setItem('studentList', JSON.stringify(studentList));
+                await syncDataToSheet();
+                renderKocPanel();
+            }
+        }
+
+        function openStudentPasswordsModal() {
+            const container = document.getElementById('studentPasswordListContainer');
+            container.innerHTML = "";
+
+            studentList.forEach(student => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-50 p-3 rounded-xl border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3";
+                div.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-900 text-sm">${student.fullName}</span>
+                        <span class="block text-xs text-slate-500">${student.class}</span>
+                    </div>
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <input type="text" id="pass_input_${student.id}" value="${student.password || '12345'}" class="px-3 py-1.5 text-xs border rounded-lg w-28 font-mono">
+                        <button onclick="updateStudentPassword('${student.id}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition">Şifreyi Güncelle</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('studentPasswordsModal').classList.remove('hidden');
+        }
+
+        function closeStudentPasswordsModal() {
+            document.getElementById('studentPasswordsModal').classList.add('hidden');
+        }
+
+        async function updateStudentPassword(studentId) {
+            const newPass = document.getElementById(`pass_input_${studentId}`).value.trim();
+            const student = studentList.find(s => s.id === studentId);
+            if (student && newPass) {
+                student.password = newPass;
+                localStorage.setItem('studentList', JSON.stringify(studentList));
+                await syncDataToSheet();
+                alert(`${student.fullName} öğrencisinin şifresi güncellendi: ${newPass}`);
+            }
+        }
+
+        async function openStudentDetailModal(studentId) {
+            await fetchStudentsFromSheet();
+            const student = studentList.find(s => s.id === studentId);
+            if (!student) return;
+
+            document.getElementById('detailStudentName').innerText = student.fullName;
+            document.getElementById('detailStudentClass').innerText = student.class;
+
+            const dailyContainer = document.getElementById('detailDailyQuestions');
+            dailyContainer.innerHTML = "";
+            
+            const sortedDaily = [...(student.dailyQuestions || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const sortedExams = [...(student.exams || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (sortedDaily.length === 0) {
+                dailyContainer.innerHTML = `<p class="text-xs text-slate-400">Henüz günlük soru kaydı yok.</p>`;
             } else {
-                st.exams.forEach(ex => {
+                sortedDaily.slice().reverse().forEach(dq => {
+                    let detailStr = Object.entries(dq.questions || {})
+                        .filter(([k, v]) => Number(v) > 0)
+                        .map(([k, v]) => `${k.toUpperCase()}: ${v}`)
+                        .join(" | ");
+                    
                     const div = document.createElement('div');
-                    div.className = "p-3 bg-slate-50 rounded-xl border text-xs flex justify-between";
-                    div.innerHTML = `<span><b>${ex.type}</b> - ${ex.name} (${ex.date})</span><span class="font-bold text-emerald-600">Net: ${ex.totalNet}</span>`;
-                    container.appendChild(div);
+                    div.className = "bg-slate-50 p-2.5 rounded-xl border text-xs flex justify-between";
+                    div.innerHTML = `<span class="font-semibold text-slate-700">${formatDateTR(dq.date)}</span> <span class="text-indigo-600 font-medium">${detailStr || '0 Soru'}</span>`;
+                    dailyContainer.appendChild(div);
                 });
             }
+
+            const examContainer = document.getElementById('detailExamResults');
+            examContainer.innerHTML = "";
+            if (sortedExams.length === 0) {
+                examContainer.innerHTML = `<p class="text-xs text-slate-400">Henüz deneme kaydı yok.</p>`;
+            } else {
+                sortedExams.slice().reverse().forEach(ex => {
+                    let lessonsHtml = "";
+                    Object.entries(ex.lessons || {}).forEach(([lesName, lesData]) => {
+                        lessonsHtml += `
+                            <div class="bg-white p-2 rounded-lg border text-xs flex justify-between items-center">
+                                <span class="font-bold text-slate-700 uppercase">${lesName}</span>
+                                <div class="flex gap-3 text-[11px]">
+                                    <span class="text-emerald-600 font-semibold">D: ${lesData.d}</span>
+                                    <span class="text-rose-600 font-semibold">Y: ${lesData.y}</span>
+                                    <span class="text-indigo-600 font-bold">Net: ${lesData.net}</span>
+                                </div>
+                            </div>`;
+                    });
+
+                    const div = document.createElement('div');
+                    div.className = "bg-slate-50 p-3 rounded-xl border space-y-2";
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center border-b pb-1.5">
+                            <div>
+                                <span class="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded mr-2">${ex.type}</span>
+                                <span class="font-bold text-slate-800 text-xs">${ex.name}</span>
+                                <span class="text-[11px] text-slate-400 ml-2">(${formatDateTR(ex.date)})</span>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-600">Toplam Net: ${ex.totalNet}</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">${lessonsHtml}</div>
+                    `;
+                    examContainer.appendChild(div);
+                });
+            }
+
+            renderLessonSuccessCards(student.exams || [], 'detailLessonSuccessContainer');
+
             document.getElementById('studentDetailModal').classList.remove('hidden');
+
+            setTimeout(() => {
+                renderDetailCharts(student);
+            }, 100);
         }
 
-        function closeStudentDetailModal() { document.getElementById('studentDetailModal').classList.add('hidden'); }
-
-        function renderOgrenciPanel() {
-            document.getElementById('ogrenciWelcomeTitle').innerText = `Hoş Geldin, ${currentUser.fullName}`;
-            document.getElementById('ogrenciSubInfo').innerText = currentUser.class;
-            document.getElementById('statTargetQuestion').innerText = currentUser.targetQuestions || 1000;
-            const solved = (currentUser.dailyQuestions || []).reduce((acc, curr) => acc + Object.values(curr.questions || {}).reduce((a, b) => a + Number(b), 0), 0);
-            document.getElementById('statSolvedQuestion').innerText = solved;
-            document.getElementById('statExamCount').innerText = currentUser.exams ? currentUser.exams.length : 0;
-            renderLessonSuccessCards();
+        function closeStudentDetailModal() {
+            document.getElementById('studentDetailModal').classList.add('hidden');
         }
 
-        function renderLessonSuccessCards() {
-            const container = document.getElementById('lessonSuccessAnalysisContainer');
+        function printStudentReport() {
+            window.print();
+        }
+
+        function renderLessonSuccessCards(exams, containerId) {
+            const container = document.getElementById(containerId);
             container.innerHTML = "";
-            const exams = currentUser.exams || [];
-            if (exams.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400">Henüz deneme kaydı yok.</p>`;
+
+            if (!exams || exams.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz deneme kaydı olmadığı için başarı analizi yapılamıyor.</p>`;
                 return;
             }
-            let stats = {};
+
+            let lessonStats = {};
             exams.forEach(ex => {
                 if (ex.lessons) {
-                    Object.entries(ex.lessons).forEach(([les, data]) => {
-                        if (!stats[les]) stats[les] = { total: 0, count: 0 };
-                        stats[les].total += parseFloat(data.net) || 0;
-                        stats[les].count++;
+                    const maxMap = (ex.type === "TYT") ? tytMaxQ : aytMaxQ;
+                    Object.entries(ex.lessons).forEach(([lesKey, lesData]) => {
+                        const statKey = `${ex.type}_${lesKey}`;
+                        if (!lessonStats[statKey]) {
+                            lessonStats[statKey] = { 
+                                totalNet: 0, 
+                                count: 0, 
+                                maxQ: maxMap[lesKey] || 40,
+                                label: `${ex.type} ${lessonNamesMap[lesKey] || lesKey}`
+                            };
+                        }
+                        lessonStats[statKey].totalNet += parseFloat(lesData.net) || 0;
+                        lessonStats[statKey].count += 1;
                     });
                 }
             });
-            Object.entries(stats).forEach(([les, data]) => {
-                const avg = data.total / data.count;
-                const max = lessonMaxQuestions[les] || 40;
-                let rate = (avg / max) * 100;
-                if (rate > 100) rate = 100;
-                const div = document.createElement('div');
-                div.className = "bg-rose-50 border border-rose-100 p-3 rounded-xl";
-                div.innerHTML = `<span class="font-bold text-xs uppercase">${lessonNamesMap[les] || les}</span><div class="text-xl font-extrabold text-rose-600 mt-1">%${rate.toFixed(1)}</div><span class="text-[10px] text-slate-500">Ort. Net: ${avg.toFixed(1)} / Max: ${max}</span>`;
-                container.appendChild(div);
+
+            let hasData = false;
+            Object.values(lessonStats).forEach(stat => {
+                hasData = true;
+                const avgNet = stat.totalNet / stat.count;
+                const maxQ = stat.maxQ;
+                let successRate = (avgNet / maxQ) * 100;
+                if (successRate > 100) successRate = 100;
+                if (successRate < 0) successRate = 0;
+
+                const card = document.createElement('div');
+                card.className = "bg-rose-50 border border-rose-100 p-3 rounded-xl flex flex-col justify-between";
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-slate-800 text-xs uppercase">${stat.label}</span>
+                        <span class="text-[10px] text-rose-500 font-semibold">Ort: ${avgNet.toFixed(1)} / ${maxQ} Soru</span>
+                    </div>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span class="text-xl font-extrabold text-rose-600">%${successRate.toFixed(1)}</span>
+                        <span class="text-[11px] text-rose-700 font-medium">Başarı Oranı</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (!hasData) {
+                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">Henüz ders bazında net verisi girilmemiş.</p>`;
+            }
+        }
+
+        function renderDetailCharts(student) {
+            const exams = [...(student.exams || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const daily = [...(student.dailyQuestions || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            const tytExams = exams.filter(e => e.type === "TYT");
+            if (detailChartTytInstance) detailChartTytInstance.destroy();
+            detailChartTytInstance = new Chart(document.getElementById('detailChartTyt').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: tytExams.length ? tytExams.map(e => `${formatDateTR(e.date)} - ${e.name}`) : ["Veri Yok"],
+                    datasets: [{ label: 'TYT Net', data: tytExams.length ? tytExams.map(e => parseFloat(e.totalNet)) : [0], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.3 }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            const aytExams = exams.filter(e => e.type === "AYT");
+            if (detailChartAytInstance) detailChartAytInstance.destroy();
+            detailChartAytInstance = new Chart(document.getElementById('detailChartAyt').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: aytExams.length ? aytExams.map(e => `${formatDateTR(e.date)} - ${e.name}`) : ["Veri Yok"],
+                    datasets: [{ label: 'AYT Net', data: aytExams.length ? aytExams.map(e => parseFloat(e.totalNet)) : [0], borderColor: '#9333ea', backgroundColor: 'rgba(147, 51, 234, 0.1)', fill: true, tension: 0.3 }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            if (detailChartWeeklyInstance) detailChartWeeklyInstance.destroy();
+            detailChartWeeklyInstance = new Chart(document.getElementById('detailChartWeekly').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: daily.length ? daily.map(d => formatDateTR(d.date)) : ["Veri Yok"],
+                    datasets: [{
+                        label: 'Günlük Çözülen Soru',
+                        data: daily.length ? daily.map(d => Object.values(d.questions || {}).reduce((a, b) => a + Number(b), 0)) : [0],
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
             });
         }
 
-        function openDailyQuestionModal() { document.getElementById('dailyQuestionModal').classList.remove('hidden'); }
-        function closeDailyQuestionModal() { document.getElementById('dailyQuestionModal').classList.add('hidden'); }
-        function openExamModal() { alert("Sınav giriş ekranı"); }
-        function openStudentPasswordsModal() { alert("Şifre yönetim ekranı"); }
-        function openAddStudentModal() { alert("Öğrenci ekleme ekranı"); }
-        function openPasswordModal() { alert("Koç şifre değiştirme"); }
+        function renderOgrenciPanel() {
+            document.getElementById('ogrenciWelcomeTitle').innerText = `Hoş Geldin, ${currentUser.fullName}`;
+            document.getElementById('ogrenciSubInfo').innerText = `${currentUser.class} | Kişisel Takip Ekranın`;
+
+            document.getElementById('statTargetQuestion').innerText = currentUser.targetQuestions;
+            
+            const totalSolved = (currentUser.dailyQuestions || []).reduce((acc, curr) => {
+                return acc + Object.values(curr.questions || {}).reduce((a, b) => a + Number(b), 0);
+            }, 0);
+            document.getElementById('statSolvedQuestion').innerText = totalSolved;
+            document.getElementById('statExamCount').innerText = currentUser.exams ? currentUser.exams.length : 0;
+
+            renderCharts();
+            renderLessonSuccessCards(currentUser.exams || [], 'lessonSuccessAnalysisContainer');
+            renderExamTable();
+        }
+
+        function renderCharts() {
+            const exams = [...(currentUser.exams || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const daily = [...(currentUser.dailyQuestions || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            const tytExams = exams.filter(e => e.type === "TYT");
+            if (chartTytInstance) chartTytInstance.destroy();
+            chartTytInstance = new Chart(document.getElementById('chartTytNet').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: tytExams.length ? tytExams.map(e => `${formatDateTR(e.date)} - ${e.name}`) : ["Henüz Veri Yok"],
+                    datasets: [{ label: 'TYT Net', data: tytExams.length ? tytExams.map(e => parseFloat(e.totalNet)) : [0], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.3 }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            const aytExams = exams.filter(e => e.type === "AYT");
+            if (chartAytInstance) chartAytInstance.destroy();
+            chartAytInstance = new Chart(document.getElementById('chartAytNet').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: aytExams.length ? aytExams.map(e => `${formatDateTR(e.date)} - ${e.name}`) : ["Henüz Veri Yok"],
+                    datasets: [{ label: 'AYT Net', data: aytExams.length ? aytExams.map(e => parseFloat(e.totalNet)) : [0], borderColor: '#9333ea', backgroundColor: 'rgba(147, 51, 234, 0.1)', fill: true, tension: 0.3 }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+
+            const dailyLabels = daily.map(d => formatDateTR(d.date));
+            const dailyTotals = daily.map(d => Object.values(d.questions || {}).reduce((a, b) => a + Number(b), 0));
+
+            if (chartWeeklyInstance) chartWeeklyInstance.destroy();
+            chartWeeklyInstance = new Chart(document.getElementById('chartWeeklyQuestions').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: dailyLabels.length ? dailyLabels : ["Henüz Veri Yok"],
+                    datasets: [{
+                        label: 'Günlük Çözülen Soru Sayısı',
+                        data: dailyTotals.length ? dailyTotals : [0],
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function switchExamTab(tabType) {
+            activeExamTab = tabType;
+            const btnTyt = document.getElementById('btnTabTyt');
+            const btnAyt = document.getElementById('btnTabAyt');
+
+            if (tabType === 'TYT') {
+                btnTyt.className = "px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-100 text-indigo-700";
+                btnAyt.className = "px-3 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200";
+            } else {
+                btnAyt.className = "px-3 py-1 text-xs font-semibold rounded-lg bg-purple-100 text-purple-700";
+                btnTyt.className = "px-3 py-1 text-xs font-semibold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200";
+            }
+            renderExamTable();
+        }
+
+        function renderExamTable() {
+            const tbody = document.getElementById('examHistoryTableBody');
+            tbody.innerHTML = "";
+
+            const filteredExams = (currentUser.exams || [])
+                .filter(e => e.type === activeExamTab)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            if (filteredExams.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-400">Henüz ${activeExamTab} deneme kaydı girilmedi.</td></tr>`;
+                return;
+            }
+
+            filteredExams.slice().reverse().forEach(ex => {
+                let summaryText = Object.entries(ex.lessons || {}).map(([k, v]) => `${k.toUpperCase()}: ${v.net}`).join(" | ");
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-medium text-slate-900">${formatDateTR(ex.date)}</td>
+                    <td class="py-3 px-3 font-semibold text-slate-800">${ex.name}</td>
+                    <td class="py-3 px-3 text-right font-bold text-emerald-600">${ex.totalNet} <span class="block text-[10px] text-slate-400 font-normal">${summaryText}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openDailyQuestionModal() {
+            document.getElementById('dailyQuestionDate').valueAsDate = new Date();
+            document.getElementById('dailyQuestionModal').classList.remove('hidden');
+        }
+        function closeDailyQuestionModal() {
+            document.getElementById('dailyQuestionModal').classList.add('hidden');
+        }
+
+        async function handleSaveDailyQuestions(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSaveDaily');
+            btn.innerText = "Buluta Gönderiliyor...";
+            btn.disabled = true;
+
+            const date = document.getElementById('dailyQuestionDate').value;
+            const questions = {
+                turkce: Number(document.getElementById('q_turkce').value) || 0,
+                matematik: Number(document.getElementById('q_matematik').value) || 0,
+                geometri: Number(document.getElementById('q_geometri').value) || 0,
+                fizik: Number(document.getElementById('q_fizik').value) || 0,
+                kimya: Number(document.getElementById('q_kimya').value) || 0,
+                biyoloji: Number(document.getElementById('q_biyoloji').value) || 0,
+                tarih: Number(document.getElementById('q_tarih').value) || 0,
+                cografya: Number(document.getElementById('q_cografya').value) || 0,
+                felsefe: Number(document.getElementById('q_felsefe').value) || 0,
+                din: Number(document.getElementById('q_din').value) || 0,
+            };
+
+            if (!currentUser.dailyQuestions) currentUser.dailyQuestions = [];
+            currentUser.dailyQuestions.push({ id: Date.now().toString(), date, questions });
+
+            await updateCurrentStudentInStorage();
+            
+            btn.innerText = "Kaydet";
+            btn.disabled = false;
+            closeDailyQuestionModal();
+            renderOgrenciPanel();
+            alert("Günlük soru sayısı kaydedildi ve koç paneline aktarıldı!");
+        }
+
+        function openExamModal() {
+            document.getElementById('examDateInput').valueAsDate = new Date();
+            onExamTypeChange();
+            document.getElementById('examModal').classList.remove('hidden');
+        }
+        function closeExamModal() { document.getElementById('examModal').classList.add('hidden'); }
+
+        function onExamTypeChange() {
+            const type = document.getElementById('examTypeSelect').value;
+            const container = document.getElementById('examLessonsContainer');
+            container.innerHTML = "";
+
+            let lessons = [];
+            if (type === "TYT") {
+                lessons = [
+                    { id: "turkce", name: "Türkçe (40 Soru)" },
+                    { id: "matematik", name: "Temel Matematik (40 Soru)" },
+                    { id: "sosyal", name: "Sosyal Bilimler (20 Soru)" },
+                    { id: "fizik", name: "Fizik (7 Soru)" },
+                    { id: "kimya", name: "Kimya (7 Soru)" },
+                    { id: "biyoloji", name: "Biyoloji (6 Soru)" }
+                ];
+            } else {
+                lessons = [
+                    { id: "matematik", name: "AYT Matematik (40 Soru)" },
+                    { id: "fizik", name: "AYT Fizik (14 Soru)" },
+                    { id: "kimya", name: "AYT Kimya (13 Soru)" },
+                    { id: "biyoloji", name: "AYT Biyoloji (13 Soru)" },
+                    { id: "edebiyat", name: "Türk Dili ve Edebiyatı (24 Soru)" },
+                    { id: "tarih1", name: "Tarih-1 (10 Soru)" },
+                    { id: "cografya1", name: "Coğrafya-1 (6 Soru)" },
+                    { id: "tarih2", name: "Tarih-2 (11 Soru)" },
+                    { id: "cografya2", name: "Coğrafya-2 (11 Soru)" },
+                    { id: "felsefe", name: "Felsefe Grubu (12 Soru)" },
+                    { id: "din", name: "Din Kültürü (6 Soru)" }
+                ];
+            }
+
+            lessons.forEach(l => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-50 p-3 rounded-xl border grid grid-cols-3 gap-2 items-center";
+                div.innerHTML = `
+                    <span class="font-bold text-xs text-indigo-700 col-span-3">${l.name}</span>
+                    <div><input type="number" min="0" placeholder="Doğru" id="les_${l.id}_d" oninput="calcExamNets()" class="w-full px-2 py-1 text-xs border rounded-lg"></div>
+                    <div><input type="number" min="0" placeholder="Yanlış" id="les_${l.id}_y" oninput="calcExamNets()" class="w-full px-2 py-1 text-xs border rounded-lg"></div>
+                    <div class="text-right text-xs font-semibold text-slate-600">Net: <span id="les_${l.id}_net" class="text-slate-900">0.00</span></div>
+                `;
+                container.appendChild(div);
+            });
+            calcExamNets();
+        }
+
+        function calcExamNets() {
+            const type = document.getElementById('examTypeSelect').value;
+            let lessonIds = type === "TYT" ? ["turkce", "matematik", "sosyal", "fizik", "kimya", "biyoloji"] : ["matematik", "fizik", "kimya", "biyoloji", "edebiyat", "tarih1", "cografya1", "tarih2", "cografya2", "felsefe", "din"];
+
+            let totalNet = 0;
+            lessonIds.forEach(id => {
+                const dInput = document.getElementById(`les_${id}_d`);
+                const yInput = document.getElementById(`les_${id}_y`);
+                if (dInput && yInput) {
+                    const d = parseFloat(dInput.value) || 0;
+                    const y = parseFloat(yInput.value) || 0;
+                    let net = d - (y / 4);
+                    if (net < 0) net = 0;
+                    document.getElementById(`les_${id}_net`).innerText = net.toFixed(2);
+                    totalNet += net;
+                }
+            });
+
+            document.getElementById('totalExamNet').innerText = totalNet.toFixed(2);
+        }
+
+        async function handleSaveExam(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSaveExam');
+            btn.innerText = "Buluta Gönderiliyor...";
+            btn.disabled = true;
+
+            const type = document.getElementById('examTypeSelect').value;
+            const name = document.getElementById('examNameInput').value.trim();
+            const date = document.getElementById('examDateInput').value;
+
+            let lessonIds = type === "TYT" ? ["turkce", "matematik", "sosyal", "fizik", "kimya", "biyoloji"] : ["matematik", "fizik", "kimya", "biyoloji", "edebiyat", "tarih1", "cografya1", "tarih2", "cografya2", "felsefe", "din"];
+
+            let lessonsData = {};
+            let totalNet = 0;
+
+            lessonIds.forEach(id => {
+                const d = parseFloat(document.getElementById(`les_${id}_d`).value) || 0;
+                const y = parseFloat(document.getElementById(`les_${id}_y`).value) || 0;
+                let net = d - (y / 4);
+                if (net < 0) net = 0;
+
+                if (d > 0 || y > 0) {
+                    lessonsData[id] = { d, y, net: net.toFixed(2) };
+                    totalNet += net;
+                }
+            });
+
+            const newExam = {
+                id: Date.now().toString(),
+                type,
+                name,
+                date,
+                lessons: lessonsData,
+                totalNet: totalNet.toFixed(2)
+            };
+
+            if (!currentUser.exams) currentUser.exams = [];
+            currentUser.exams.push(newExam);
+
+            await updateCurrentStudentInStorage();
+
+            btn.innerText = "Kaydet";
+            btn.disabled = false;
+            closeExamModal();
+            renderOgrenciPanel();
+            alert(`${type} Deneme Sınavı kaydedildi ve koç paneline aktarıldı!`);
+        }
+
+        async function updateCurrentStudentInStorage() {
+            const sIndex = studentList.findIndex(s => s.id === currentUser.id);
+            if (sIndex !== -1) {
+                studentList[sIndex] = currentUser;
+                localStorage.setItem('studentList', JSON.stringify(studentList));
+                await syncDataToSheet();
+                saveSession();
+            }
+        }
+
+        function openAddStudentModal() { document.getElementById('addStudentModal').classList.remove('hidden'); }
+        function closeAddStudentModal() { document.getElementById('addStudentModal').classList.add('hidden'); }
+
+        async function handleAddStudent(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('newStudentFirstName').value.trim();
+            const lastName = document.getElementById('newStudentLastName').value.trim();
+            const studentClass = document.getElementById('newStudentClass').value.trim() || "YKS Sayısal";
+            const target = parseInt(document.getElementById('newStudentTarget').value);
+
+            const newStudent = {
+                id: Date.now().toString(),
+                firstName,
+                lastName,
+                fullName: `${firstName} ${lastName}`,
+                class: studentClass,
+                password: "12345",
+                targetQuestions: target,
+                dailyQuestions: [],
+                exams: []
+            };
+
+            studentList.push(newStudent);
+            localStorage.setItem('studentList', JSON.stringify(studentList));
+            await syncDataToSheet();
+            closeAddStudentModal();
+            renderKocPanel();
+            alert(`${newStudent.fullName} sisteme eklendi! Varsayılan şifresi: 12345`);
+        }
+
+        function openPasswordModal() { document.getElementById('passwordModal').classList.remove('hidden'); }
+        function closePasswordModal() { document.getElementById('passwordModal').classList.add('hidden'); }
+
+        async function handlePasswordChange(e) {
+            e.preventDefault();
+            const pass1 = document.getElementById('newPasswordInput').value.trim();
+            const pass2 = document.getElementById('newPasswordConfirmInput').value.trim();
+
+            if (pass1 !== pass2) {
+                alert("Şifreler birbiriyle eşleşmiyor!");
+                return;
+            }
+
+            kocAccount.password = pass1;
+            localStorage.setItem('kocAccount', JSON.stringify(kocAccount));
+            await syncDataToSheet();
+
+            closePasswordModal();
+            alert("Koç şifreniz başarıyla güncellendi!");
+        }
     </script>
 </body>
 </html>
